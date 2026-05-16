@@ -1,0 +1,24 @@
+我的三个程序 vnt_helper.py, vnt_daemon.py  vnt_updater.py 一起协同工作。
+
+1. vnt_helper.py 是 GUI 程序
+2. vnt_daemon 是后台程序，运行一个已经编译好的 vnt-cli.exe 和 wintun.dll
+3. vnt_updater.py 是更新程序，负责检查和下载最新版本 vnt_helper.exe
+4. vnt_helper.exe 的 res 中打包了所有需要的资源文件，包括 vnt_daemon.exe，vnt_updater.exe, vnt-cli.exe 和 wintun.dll
+5. vnt_helper.exe 通过写注册表和taskscheduler来实现开机自启功能
+6. vnt_daemon.exe 通过taskscheduler 中的设置，实现在session 0 中运行，确保在用户登录前就启动
+7. vnt_helper.exe 在 session 1 中运行，提供用户界面和交互功能
+8. vnt_helper.exe 通过 IPC（如命名管道或共享内存）与 vnt_daemon.exe 进行通信，发送命令和接收状态信息
+9. vnt_helper定期查询是否有更新，并自行下载完整的安装包
+10. 下载完成后用 vnt_updater.exe 来替换旧版本的 vnt_helper.exe，并重启程序以应用更新
+
+现在，需要完成下述改写：
+
+1. 把 vnt_daemon.exe 改成系统服务运行
+2. vnt_helper.exe 通过 Windows 服务控制管理器（SCM）来启动和停止 vnt_daemon.exe 服务
+3. vnt_helper.exe 通过 Windows 服务控制管理器（SCM）来查询 vnt_daemon.exe 服务的状态
+4. vnt_helper.exe 通过 Windows 服务控制管理器（SCM）来设置 vnt_daemon.exe 服务的自动启动类型
+5. vnt_helper.exe 通过 Windows 服务控制管理器（SCM）来安装  和卸载 vnt_daemon.exe 服务
+6. vnt_updater.exe 下载后，需要能够自动安装 vnt_daemon.exe 服务，并设置为自动启动
+7. vnt_updater.exe 下载后，需要能够自动卸载旧版本的 vnt_daemon.exe 服务，并安装新版本的服
+8. 现在版本中 daemon 也可以在 session 1 中运行，修改后不需要
+9. 其他的所的功能和逻辑都不要改动

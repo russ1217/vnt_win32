@@ -1,0 +1,792 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-15 23:14+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: vnt_helper.py:193
+msgid "There are "
+msgstr ""
+
+#: vnt_helper.py:193
+msgid " of "
+msgstr ""
+
+#: vnt_helper.py:193
+msgid " session(s) already running\n"
+msgstr ""
+
+#: vnt_helper.py:193
+msgid "Start New Sessions?"
+msgstr ""
+
+#: vnt_helper.py:194 vnt_helper.py:2104 vnt_helper.py:2118 vnt_helper.py:2321
+#: vnt_helper.py:2771 vnt_helper.py:2822 vnt_helper.py:2828 vnt_helper.py:2832
+#: vnt_helper.py:3039 vnt_helper.py:3054 vnt_helper.py:3057 vnt_helper.py:3060
+#: vnt_helper.py:3072 vnt_helper.py:4301 vnt_helper.py:4303
+msgid "Status"
+msgstr ""
+
+#: vnt_helper.py:332
+#, python-brace-format
+msgid "VNT Helper Version {version}"
+msgstr ""
+
+#: vnt_helper.py:333
+msgid "Information"
+msgstr ""
+
+#: vnt_helper.py:1559 vnt_helper.py:1875
+msgid "VNT Setting"
+msgstr ""
+
+#: vnt_helper.py:1573 vnt_helper.py:1877
+msgid "Configuration Name"
+msgstr ""
+
+#: vnt_helper.py:1591 vnt_helper.py:1878
+msgid "Basic Parameters"
+msgstr ""
+
+#: vnt_helper.py:1599 vnt_helper.py:1879
+msgid "Token"
+msgstr ""
+
+#: vnt_helper.py:1607 vnt_helper.py:1880
+msgid "Device ID"
+msgstr ""
+
+#: vnt_helper.py:1622 vnt_helper.py:1881
+msgid "Virtual IP"
+msgstr ""
+
+#: vnt_helper.py:1630 vnt_helper.py:1882
+msgid "Server IP:Port"
+msgstr ""
+
+#: vnt_helper.py:1638 vnt_helper.py:1883
+msgid "Network Password"
+msgstr ""
+
+#: vnt_helper.py:1653 vnt_helper.py:1884
+msgid "Protocol"
+msgstr ""
+
+#: vnt_helper.py:1656 vnt_helper.py:1890
+msgid "QUIC (UDP)"
+msgstr ""
+
+#: vnt_helper.py:1656 vnt_helper.py:1890
+msgid "TCP"
+msgstr ""
+
+#: vnt_helper.py:1656 vnt_helper.py:1890
+msgid "WS"
+msgstr ""
+
+#: vnt_helper.py:1656 vnt_helper.py:1890
+msgid "WSS"
+msgstr ""
+
+#: vnt_helper.py:1663 vnt_helper.py:1885
+msgid "Compression"
+msgstr ""
+
+#: vnt_helper.py:1666 vnt_helper.py:1891
+msgid "none"
+msgstr ""
+
+#: vnt_helper.py:1666 vnt_helper.py:1891
+msgid "lz4"
+msgstr ""
+
+#: vnt_helper.py:1666 vnt_helper.py:1891
+msgid "zstd"
+msgstr ""
+
+#: vnt_helper.py:1673 vnt_helper.py:1886
+msgid "E2E Security"
+msgstr ""
+
+#: vnt_helper.py:1676 vnt_helper.py:1892
+msgid "aes_gcm"
+msgstr ""
+
+#: vnt_helper.py:1676 vnt_helper.py:1892
+msgid "chacha20_poly1305"
+msgstr ""
+
+#: vnt_helper.py:1676 vnt_helper.py:1892
+msgid "chacha20"
+msgstr ""
+
+#: vnt_helper.py:1676 vnt_helper.py:1892
+msgid "aes_cbc"
+msgstr ""
+
+#: vnt_helper.py:1676 vnt_helper.py:1892
+msgid "aes_ecb"
+msgstr ""
+
+#: vnt_helper.py:1676 vnt_helper.py:1892
+msgid "sm4_cbc"
+msgstr ""
+
+#: vnt_helper.py:1676 vnt_helper.py:1892
+msgid "xor"
+msgstr ""
+
+#: vnt_helper.py:1724 vnt_helper.py:1895
+msgid "Auto Start"
+msgstr ""
+
+#: vnt_helper.py:1729 vnt_helper.py:1896
+msgid "Encrypted Server Connection"
+msgstr ""
+
+#: vnt_helper.py:1734 vnt_helper.py:1897
+msgid "Show Notification"
+msgstr ""
+
+#: vnt_helper.py:1746 vnt_helper.py:1887
+msgid "More Options"
+msgstr ""
+
+#: vnt_helper.py:1750 vnt_helper.py:1899
+msgid "Manually edit yaml file setting for VNT (Advanced User Only) ..."
+msgstr ""
+
+#: vnt_helper.py:1760 vnt_helper.py:1906
+msgid "Set up your connection ..."
+msgstr ""
+
+#: vnt_helper.py:1776 vnt_helper.py:1901
+msgid "Save && Connect"
+msgstr ""
+
+#: vnt_helper.py:1781 vnt_helper.py:1902 vnt_helper.py:2523 vnt_helper.py:2680
+msgid "Cancel"
+msgstr ""
+
+#: vnt_helper.py:1785 vnt_helper.py:1903
+msgid "Exit VNT Helper"
+msgstr ""
+
+#: vnt_helper.py:1940
+msgid ""
+"Default AES128-GCM encryption when password length < 8, or your choice of "
+"E2E encryption"
+msgstr ""
+
+#: vnt_helper.py:1943
+msgid ""
+"Default AES256-GCM encryption when password length >= 8, or your choice of "
+"E2E encryption"
+msgstr ""
+
+#: vnt_helper.py:1978
+#, python-format
+msgid "Valid profile name: %s "
+msgstr ""
+
+#: vnt_helper.py:1982
+#, python-format
+msgid "Invalid profile name: %s "
+msgstr ""
+
+#: vnt_helper.py:1991
+msgid "Nodes with different encryption CANNOT connect!"
+msgstr ""
+
+#: vnt_helper.py:1993
+msgid ""
+"1. All nodes must use the same encryption method.\n"
+"2. Encryption method is NONE if password is empty.\n"
+"3. Default is AES_GCM."
+msgstr ""
+
+#: vnt_helper.py:1994
+msgid "Information on Client Encryption"
+msgstr ""
+
+#: vnt_helper.py:2000
+msgid "LZ4 is recommended. ZSTD needs compile with --features zstd"
+msgstr ""
+
+#: vnt_helper.py:2008
+msgid ""
+"WSS protocol requires server to use reverse proxy with valid SSL certificate"
+msgstr ""
+
+#: vnt_helper.py:2011
+msgid "QUIC protocol selected (optimized UDP transport)"
+msgstr ""
+
+#: vnt_helper.py:2014
+#, python-format
+msgid "%s protocol selected"
+msgstr ""
+
+#: vnt_helper.py:2022
+msgid "Will apply autoboot via registry and task scheduler"
+msgstr ""
+
+#: vnt_helper.py:2024
+msgid "Auto start disabled"
+msgstr ""
+
+#: vnt_helper.py:2032
+msgid ""
+"Connection with server will be encrypted with RSA/AES to prevent "
+"eavesdropping"
+msgstr ""
+
+#: vnt_helper.py:2034
+msgid "Connection with server will be in plain text"
+msgstr ""
+
+#: vnt_helper.py:2042
+msgid "Bubble Message notifications are enabled"
+msgstr ""
+
+#: vnt_helper.py:2044
+msgid "Bubble Message notifications are disabled"
+msgstr ""
+
+#: vnt_helper.py:2088
+msgid ""
+"Are you sure to \n"
+"(1) OVERWRITE the settings\n"
+"(2) RECONNECT to virtual network?"
+msgstr ""
+
+#: vnt_helper.py:2090 vnt_helper.py:2395 vnt_helper.py:3051 vnt_helper.py:3067
+#: vnt_helper.py:3458 vnt_helper.py:4310 vnt_helper.py:4380 vnt_helper.py:5365
+msgid "Confirmation"
+msgstr ""
+
+#: vnt_helper.py:2104 vnt_helper.py:2771
+msgid "Error Updating VNT config"
+msgstr ""
+
+#: vnt_helper.py:2118
+msgid "Error establishing connection profile"
+msgstr ""
+
+#: vnt_helper.py:2133
+msgid ""
+"Token needs to be registered in your server. Nodes with same token form a "
+"virtual LAN."
+msgstr ""
+
+#: vnt_helper.py:2137
+msgid "Assign an ID for your machine. Cannot be the same with other nodes."
+msgstr ""
+
+#: vnt_helper.py:2141
+msgid "Assign an IP for your machine. Server will assign one if left blank"
+msgstr ""
+
+#: vnt_helper.py:2145
+msgid "FORMAT: [Server Name or IP:PORT] Example: vnt.wherewego.top:29872"
+msgstr ""
+
+#: vnt_helper.py:2150
+msgid ""
+"Password for end-to-end encryption, NOT for connection with server. Leave "
+"blank for no encryption."
+msgstr ""
+
+#: vnt_helper.py:2228
+#, python-format
+msgid "Error#Invalid IP %s, Server assigns IP"
+msgstr ""
+
+#: vnt_helper.py:2321
+#, python-format
+msgid "Error %s loading connection profile! Consider RESET"
+msgstr ""
+
+#: vnt_helper.py:2356
+msgid "Valid IP entered"
+msgstr ""
+
+#: vnt_helper.py:2360
+msgid "Invalid or Empty IP..."
+msgstr ""
+
+#: vnt_helper.py:2370
+msgid "Valid Domain:Port entered"
+msgstr ""
+
+#: vnt_helper.py:2374
+msgid "Invalid or Empty Domain:Port ..."
+msgstr ""
+
+#: vnt_helper.py:2395 vnt_helper.py:4380
+msgid "Are you sure to close VNT network and exit?"
+msgstr ""
+
+#: vnt_helper.py:2438 vnt_helper.py:2668
+msgid "Auto Update"
+msgstr ""
+
+#: vnt_helper.py:2441 vnt_helper.py:2669
+msgid "Manual Update"
+msgstr ""
+
+#: vnt_helper.py:2444 vnt_helper.py:2670
+msgid "Disable Update"
+msgstr ""
+
+#: vnt_helper.py:2459 vnt_helper.py:2672
+msgid "Server Address:  "
+msgstr ""
+
+#: vnt_helper.py:2464 vnt_helper.py:2673
+msgid "http://"
+msgstr ""
+
+#: vnt_helper.py:2469
+msgid "IP or DOMAIN"
+msgstr ""
+
+#: vnt_helper.py:2474
+msgid ":"
+msgstr ""
+
+#: vnt_helper.py:2479
+msgid "11061"
+msgstr ""
+
+#: vnt_helper.py:2487 vnt_helper.py:2675
+msgid "   Update Cycle (sec)"
+msgstr ""
+
+#: vnt_helper.py:2493
+msgid "60"
+msgstr ""
+
+#: vnt_helper.py:2503 vnt_helper.py:2683
+msgid "Progress"
+msgstr ""
+
+#: vnt_helper.py:2517 vnt_helper.py:2678
+msgid "Check Update"
+msgstr ""
+
+#: vnt_helper.py:2520 vnt_helper.py:2679
+msgid "Save Settings"
+msgstr ""
+
+#: vnt_helper.py:2822
+msgid "Invalid Host or Port"
+msgstr ""
+
+#: vnt_helper.py:2828
+msgid "Error saving the settings"
+msgstr ""
+
+#: vnt_helper.py:2832
+msgid "Error Initialize Update Settings, check your URL or file name"
+msgstr ""
+
+#: vnt_helper.py:3039
+msgid "Update parameters error"
+msgstr ""
+
+#: vnt_helper.py:3051
+msgid "Update package download completed, update now?"
+msgstr ""
+
+#: vnt_helper.py:3054
+msgid "Error in downloading new package"
+msgstr ""
+
+#: vnt_helper.py:3057
+msgid "No new version for an update found"
+msgstr ""
+
+#: vnt_helper.py:3060
+msgid "Update temporarily not allowed for this IP"
+msgstr ""
+
+#: vnt_helper.py:3067
+msgid "An update package is already downloaded, update now?"
+msgstr ""
+
+#: vnt_helper.py:3072
+msgid "Downloaded package seems to be corrupted, will be deleted"
+msgstr ""
+
+#: vnt_helper.py:3458
+msgid "Stop downloading update package?"
+msgstr ""
+
+#: vnt_helper.py:3775 vnt_helper.py:3901
+msgid "VNT Network Information"
+msgstr ""
+
+#: vnt_helper.py:3799 vnt_helper.py:3904
+msgid "Network List"
+msgstr ""
+
+#: vnt_helper.py:3805 vnt_helper.py:3905
+msgid "Route Table"
+msgstr ""
+
+#: vnt_helper.py:3811 vnt_helper.py:3906
+msgid "My Node Info"
+msgstr ""
+
+#: vnt_helper.py:3862 vnt_helper.py:3909 vnt_helper.py:4439 vnt_helper.py:4484
+#: vnt_helper.py:4912 vnt_helper.py:5174
+msgid "Close"
+msgstr ""
+
+#: vnt_helper.py:4113 vnt_helper.py:4367
+msgid "About"
+msgstr ""
+
+#: vnt_helper.py:4118
+msgid "Show log info"
+msgstr ""
+
+#: vnt_helper.py:4121
+msgid "Connection Information"
+msgstr ""
+
+#: vnt_helper.py:4128
+msgid "Remove Autostart"
+msgstr ""
+
+#: vnt_helper.py:4131
+msgid "Set Autostart"
+msgstr ""
+
+#: vnt_helper.py:4137
+msgid "Toggle on VNT Connection"
+msgstr ""
+
+#: vnt_helper.py:4140
+msgid "Toggle off VNT Connection"
+msgstr ""
+
+#: vnt_helper.py:4148
+msgid "Disable Notification"
+msgstr ""
+
+#: vnt_helper.py:4151
+msgid "Enable Notification"
+msgstr ""
+
+#: vnt_helper.py:4170
+msgid "Display Language"
+msgstr ""
+
+#: vnt_helper.py:4177
+msgid "Settings"
+msgstr ""
+
+#: vnt_helper.py:4180
+msgid "Manage Profiles"
+msgstr ""
+
+#: vnt_helper.py:4183
+msgid "Update"
+msgstr ""
+
+#: vnt_helper.py:4186
+msgid "Reset"
+msgstr ""
+
+#: vnt_helper.py:4191
+msgid "Exit"
+msgstr ""
+
+#: vnt_helper.py:4295
+msgid "AutoRun is turned ON, VNT Helper will automatically run on next boot"
+msgstr ""
+
+#: vnt_helper.py:4298
+msgid ""
+"AutoRun is turned OFF, VNT Helper will need to be manually run on next boot"
+msgstr ""
+
+#: vnt_helper.py:4303
+msgid ""
+"Fail to change AutoRun setting, Try manually change regedit and "
+"taskscheduler!"
+msgstr ""
+
+#: vnt_helper.py:4309
+msgid ""
+"Are you sure to clean VNT network settings?\n"
+"\n"
+"VNT Helper will stop running. Next time run will be a fresh start."
+msgstr ""
+
+#: vnt_helper.py:4339
+#, python-brace-format
+msgid ""
+"Error Cleaning VNT Setting. You may consider (1) manually "
+"remove                          {self.config_fn} in the VNT folder. (2) "
+"REGEDIT to find MANAGE_VNT key and remove it"
+msgstr ""
+
+#: vnt_helper.py:4341
+msgid "Manage VNT not Initialized"
+msgstr ""
+
+#: vnt_helper.py:4354
+msgid "Command line parameters:\n"
+msgstr ""
+
+#: vnt_helper.py:4354
+msgid "optional arguments:\n"
+msgstr ""
+
+#: vnt_helper.py:4355
+msgid "     show this help message and exit\n"
+msgstr ""
+
+#: vnt_helper.py:4356
+msgid "   set DEBUG mode in console version\n"
+msgstr ""
+
+#: vnt_helper.py:4357
+msgid "run in background, no tray icon\n"
+msgstr ""
+
+#: vnt_helper.py:4358
+msgid "    get the version information\n"
+msgstr ""
+
+#: vnt_helper.py:4373
+msgid "\"This is a crazy world. By coding sometimes we ignore it...\""
+msgstr ""
+
+#: vnt_helper.py:4373
+msgid "By the Author in an unforgettable spring of 2022 in Shanghai."
+msgstr ""
+
+#: vnt_helper.py:4393 vnt_helper.py:4473
+msgid "VNT Log Viewer"
+msgstr ""
+
+#: vnt_helper.py:4428 vnt_helper.py:4476
+msgid "Time"
+msgstr ""
+
+#: vnt_helper.py:4429 vnt_helper.py:4476
+msgid "Level"
+msgstr ""
+
+#: vnt_helper.py:4430 vnt_helper.py:4476
+msgid "PID"
+msgstr ""
+
+#: vnt_helper.py:4431 vnt_helper.py:4476
+msgid "Message"
+msgstr ""
+
+#: vnt_helper.py:4440 vnt_helper.py:4485
+msgid "Save"
+msgstr ""
+
+#: vnt_helper.py:4522
+msgid ""
+"Save current log content?\n"
+"The original log file will be overwritten with the lines currently displayed."
+msgstr ""
+
+#: vnt_helper.py:4523
+msgid "Confirm Save"
+msgstr ""
+
+#: vnt_helper.py:4557
+msgid "Log saved successfully!"
+msgstr ""
+
+#: vnt_helper.py:4557
+msgid "Success"
+msgstr ""
+
+#: vnt_helper.py:4560
+#, python-brace-format
+msgid ""
+"Failed to save log:\n"
+"{e}"
+msgstr ""
+
+#: vnt_helper.py:4560 vnt_helper.py:4617 vnt_helper.py:4650 vnt_helper.py:4955
+#: vnt_helper.py:5091 vnt_helper.py:5329 vnt_helper.py:5376 vnt_helper.py:5380
+#: vnt_helper.py:5568
+msgid "Error"
+msgstr ""
+
+#: vnt_helper.py:4648
+msgid "Log file and view cleared."
+msgstr ""
+
+#: vnt_helper.py:4648 vnt_helper.py:5088
+msgid "Info"
+msgstr ""
+
+#: vnt_helper.py:4650
+#, python-brace-format
+msgid "Clear failed: {e}"
+msgstr ""
+
+#: vnt_helper.py:4758
+msgid "VNT Config Editor (Advanced User Only)"
+msgstr ""
+
+#: vnt_helper.py:4884
+msgid "Enabled"
+msgstr ""
+
+#: vnt_helper.py:4903
+msgid "Enter one item per line"
+msgstr ""
+
+#: vnt_helper.py:4912
+msgid "Save and Exit"
+msgstr ""
+
+#: vnt_helper.py:4912
+msgid "Save As..."
+msgstr ""
+
+#: vnt_helper.py:4954
+#, python-brace-format
+msgid ""
+"Failed to load YAML:\n"
+"{e}"
+msgstr ""
+
+#: vnt_helper.py:5047
+#, python-brace-format
+msgid "Required field '{field}' is empty!"
+msgstr ""
+
+#: vnt_helper.py:5048
+msgid "Validation Error"
+msgstr ""
+
+#: vnt_helper.py:5073
+msgid "Save YAML file"
+msgstr ""
+
+#: vnt_helper.py:5087
+msgid ""
+"Saved successfully!\n"
+"\n"
+"Note: This YAML file will be converted to TOML format by vnt_daemon."
+msgstr ""
+
+#: vnt_helper.py:5090
+#, python-brace-format
+msgid ""
+"Failed to save:\n"
+"{e}"
+msgstr ""
+
+#: vnt_helper.py:5137
+msgid "Manage VNT Profiles"
+msgstr ""
+
+#: vnt_helper.py:5169
+msgid "New..."
+msgstr ""
+
+#: vnt_helper.py:5170
+msgid "Apply..."
+msgstr ""
+
+#: vnt_helper.py:5171
+msgid "Edit"
+msgstr ""
+
+#: vnt_helper.py:5172
+msgid "Import"
+msgstr ""
+
+#: vnt_helper.py:5173
+msgid "Delete"
+msgstr ""
+
+#: vnt_helper.py:5213 vnt_helper.py:5248
+msgid "Current profile:"
+msgstr ""
+
+#: vnt_helper.py:5313
+#, python-brace-format
+msgid ""
+"The file '{}' already exists in the current directory.\n"
+"Do you want to overwrite it?"
+msgstr ""
+
+#: vnt_helper.py:5315
+msgid "Confirm Overwrite"
+msgstr ""
+
+#: vnt_helper.py:5329
+#, python-brace-format
+msgid ""
+"The selected file does not appear to be a valid VNT setting profile:\n"
+"{pathname}"
+msgstr ""
+
+#: vnt_helper.py:5365
+#, python-brace-format
+msgid ""
+"Are you sure to delete the selected profile?\n"
+"\n"
+"This will also delete the file:\n"
+"{fn}"
+msgstr ""
+
+#: vnt_helper.py:5376
+#, python-brace-format
+msgid ""
+"Failed to delete profile file:\n"
+"{e}"
+msgstr ""
+
+#: vnt_helper.py:5380
+#, python-brace-format
+msgid ""
+"Failed to update profile list in:\n"
+"{fn}\n"
+"You may need to manually update it"
+msgstr ""
+
+#: vnt_helper.py:5568
+#, python-brace-format
+msgid ""
+"Cannot open URL:\n"
+"{e}"
+msgstr ""
+
+#: vnt_helper.py:5600
+#, python-brace-format
+msgid "Version INFO: {version}"
+msgstr ""
+
+#: vnt_helper.py:5623
+msgid "OK"
+msgstr ""

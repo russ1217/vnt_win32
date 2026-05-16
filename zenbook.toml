@@ -1,0 +1,9 @@
+network_code = "russvnt2"
+server = [ "quic://vnts.app:11465",]
+ip = "10.10.0.18"
+password = "011774"
+device_name = "vnt-tun"
+device_id = "zenbook"
+mtu = 1420
+compress = true
+cert_mode = "skip"

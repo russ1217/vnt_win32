@@ -1,0 +1,10 @@
+update_enabled: true
+auto_update_enabled: false
+update_file_url: 'http://172.16.0.200:11061/chfs/shared/001/vnt_helper.zip'
+update_version_url: 'http://172.16.0.200:11061/chfs/shared/001/version.yaml'
+update_cycle_sec: 600
+notification_enabled: false
+display_language: en
+autorun_cli_on_startup: true
+# if you change the IPC port here, you need to restart the vnt_daemon service and vnt_helper, or restart the system
+ipc_port: 58432

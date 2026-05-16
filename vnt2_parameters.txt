@@ -1,0 +1,29 @@
+C:\RussApp\vnt2>vnt2_cli.exe -h
+Usage: vnt2_cli.exe [OPTIONS]
+
+Options:
+  -s, --server <SERVER>              服务器地址 例如 `-s quic://127.0.0.1:29872`, 支持quic/tcp/wss/dynamic
+  -n, --network-code <NETWORK_CODE>  网络编号，相同编号的会组同一个局域网
+      --ip <IP>                      自定义虚拟IP
+  -p, --password <PASSWORD>          启用加密，设置加密密码
+      --rtx                          启用quic优化传输
+  -z, --compress                     启用压缩 (LZ4)
+      --fec                          启用 FEC 前向纠错，损失一定带宽来提升网络稳定性
+  -i, --input <INPUT>                入栈监听网段
+  -o, --output <OUTPUT>              出栈允许网段
+      --device-name <DEVICE_NAME>    自定义设备名称
+      --device-id <DEVICE_ID>        设备id
+      --no-punch                     关闭打洞
+      --cert-mode <CERT_MODE>        服务端证书验证
+      --tun-name <TUN_NAME>          虚拟网卡名称
+      --no-nat                       关闭内置子网NAT
+      --no-tun                       禁用tun，禁用后只能充当流量出口或者进行端口映射，无需管理员权限
+      --port-mapping <PORT_MAPPING>  端口映射，格式为：协议://本地监听地址-目标虚拟IP-目标映射地址
+      --allow-mapping                是否允许作为端口映射出口，开启后其他设备才可使用本设备的ip为"目标虚拟IP"
+      --mtu <MTU>                    设置mtu
+      --ctrl-port <CTRL_PORT>        控制端口，设置0时禁用控制服务
+      --tunnel-port <TUNNEL_PORT>    隧道端口，用于P2P通信
+      --conf <CONF>                  读取配置文件
+      --conf-example                 输出配置文件示例
+  -h, --help                         Print help
+  -V, --version                      Print version

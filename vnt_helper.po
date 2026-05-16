@@ -1,0 +1,874 @@
+# Chinese translations for v package.
+# Copyright (C) 2025 THE v'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the v package.
+# U-RUSS-ZENBOOK\Russ-Zenbook <russ.rao@outlook.com>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: v 3\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-15 23:14+0800\n"
+"PO-Revision-Date: 2025-12-25 22:00+0800\n"
+"Last-Translator: U-RUSS-ZENBOOK\\Russ-Zenbook <russ.rao@outlook.com>\n"
+"Language-Team: Chinese (simplified)\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: vnt_helper.py:193
+msgid "There are "
+msgstr "共有 "
+
+#: vnt_helper.py:193
+msgid " of "
+msgstr " 个 "
+
+#: vnt_helper.py:193
+msgid " session(s) already running\n"
+msgstr " 进程正在运行\n"
+
+#: vnt_helper.py:193
+msgid "Start New Sessions?"
+msgstr "关闭他们并且开始新进程吗？"
+
+#: vnt_helper.py:194 vnt_helper.py:2104 vnt_helper.py:2118 vnt_helper.py:2321
+#: vnt_helper.py:2771 vnt_helper.py:2822 vnt_helper.py:2828 vnt_helper.py:2832
+#: vnt_helper.py:3039 vnt_helper.py:3054 vnt_helper.py:3057 vnt_helper.py:3060
+#: vnt_helper.py:3072 vnt_helper.py:4301 vnt_helper.py:4303
+msgid "Status"
+msgstr "状态"
+
+#: vnt_helper.py:332
+#, python-brace-format
+msgid "VNT Helper Version {version}"
+msgstr "VNT 助手版本 {version}"
+
+#: vnt_helper.py:333
+msgid "Information"
+msgstr "信息"
+
+#: vnt_helper.py:1559 vnt_helper.py:1875
+msgid "VNT Setting"
+msgstr "VNT 设置"
+
+#: vnt_helper.py:1573 vnt_helper.py:1877
+msgid "Configuration Name"
+msgstr "配置名称"
+
+#: vnt_helper.py:1591 vnt_helper.py:1878
+msgid "Basic Parameters"
+msgstr "基本参数"
+
+#: vnt_helper.py:1599 vnt_helper.py:1879
+msgid "Token"
+msgstr "网段名"
+
+#: vnt_helper.py:1607 vnt_helper.py:1880
+msgid "Device ID"
+msgstr "设备 ID"
+
+#: vnt_helper.py:1622 vnt_helper.py:1881
+msgid "Virtual IP"
+msgstr "虚拟 IP"
+
+#: vnt_helper.py:1630 vnt_helper.py:1882
+msgid "Server IP:Port"
+msgstr "服务器 IP:端口"
+
+#: vnt_helper.py:1638 vnt_helper.py:1883
+msgid "Network Password"
+msgstr "网络密码"
+
+#: vnt_helper.py:1653 vnt_helper.py:1884
+msgid "Protocol"
+msgstr "协议"
+
+#: vnt_helper.py:1656 vnt_helper.py:1890
+msgid "QUIC (UDP)"
+msgstr ""
+
+#: vnt_helper.py:1656 vnt_helper.py:1890
+msgid "TCP"
+msgstr "TCP"
+
+#: vnt_helper.py:1656 vnt_helper.py:1890
+msgid "WS"
+msgstr "WS"
+
+#: vnt_helper.py:1656 vnt_helper.py:1890
+msgid "WSS"
+msgstr "WSS"
+
+#: vnt_helper.py:1663 vnt_helper.py:1885
+msgid "Compression"
+msgstr "压缩"
+
+#: vnt_helper.py:1666 vnt_helper.py:1891
+msgid "none"
+msgstr ""
+
+#: vnt_helper.py:1666 vnt_helper.py:1891
+msgid "lz4"
+msgstr "lz4"
+
+#: vnt_helper.py:1666 vnt_helper.py:1891
+msgid "zstd"
+msgstr "zstd"
+
+#: vnt_helper.py:1673 vnt_helper.py:1886
+msgid "E2E Security"
+msgstr "端到端安全"
+
+#: vnt_helper.py:1676 vnt_helper.py:1892
+msgid "aes_gcm"
+msgstr "aes_gcm"
+
+#: vnt_helper.py:1676 vnt_helper.py:1892
+msgid "chacha20_poly1305"
+msgstr "chacha20_poly1305"
+
+#: vnt_helper.py:1676 vnt_helper.py:1892
+msgid "chacha20"
+msgstr "chacha20"
+
+#: vnt_helper.py:1676 vnt_helper.py:1892
+msgid "aes_cbc"
+msgstr "aes_cbc"
+
+#: vnt_helper.py:1676 vnt_helper.py:1892
+msgid "aes_ecb"
+msgstr "aes_ecb"
+
+#: vnt_helper.py:1676 vnt_helper.py:1892
+msgid "sm4_cbc"
+msgstr "sm4_cbc"
+
+#: vnt_helper.py:1676 vnt_helper.py:1892
+msgid "xor"
+msgstr "xor"
+
+#: vnt_helper.py:1724 vnt_helper.py:1895
+msgid "Auto Start"
+msgstr "开机自启"
+
+#: vnt_helper.py:1729 vnt_helper.py:1896
+msgid "Encrypted Server Connection"
+msgstr "加密服务器连接"
+
+#: vnt_helper.py:1734 vnt_helper.py:1897
+msgid "Show Notification"
+msgstr "显示通知"
+
+#: vnt_helper.py:1746 vnt_helper.py:1887
+msgid "More Options"
+msgstr "更多选项"
+
+#: vnt_helper.py:1750 vnt_helper.py:1899
+msgid "Manually edit yaml file setting for VNT (Advanced User Only) ..."
+msgstr "手动编辑 VNT 的 YAML 配置文件（仅限高级用户）…"
+
+#: vnt_helper.py:1760 vnt_helper.py:1906
+msgid "Set up your connection ..."
+msgstr "设置您的连接…"
+
+#: vnt_helper.py:1776 vnt_helper.py:1901
+msgid "Save && Connect"
+msgstr "保存并连接"
+
+#: vnt_helper.py:1781 vnt_helper.py:1902 vnt_helper.py:2523 vnt_helper.py:2680
+msgid "Cancel"
+msgstr "取消"
+
+#: vnt_helper.py:1785 vnt_helper.py:1903
+msgid "Exit VNT Helper"
+msgstr "退出 VNT 助手"
+
+#: vnt_helper.py:1940
+msgid ""
+"Default AES128-GCM encryption when password length < 8, or your choice of "
+"E2E encryption"
+msgstr ""
+"当密码长度小于 8 时，默认使用 AES128-GCM 加密，或选择您自己的端到端加密方式"
+
+#: vnt_helper.py:1943
+msgid ""
+"Default AES256-GCM encryption when password length >= 8, or your choice of "
+"E2E encryption"
+msgstr ""
+"当密码长度大于等于 8 时，默认使用 AES256-GCM 加密，或选择您自己的端到端加密方"
+"式"
+
+#: vnt_helper.py:1978
+#, python-format
+msgid "Valid profile name: %s "
+msgstr "有效的配置文件名：%s"
+
+#: vnt_helper.py:1982
+#, python-format
+msgid "Invalid profile name: %s "
+msgstr "无效的配置文件名：%s"
+
+#: vnt_helper.py:1991
+msgid "Nodes with different encryption CANNOT connect!"
+msgstr "使用不同加密方式的节点无法连接！"
+
+#: vnt_helper.py:1993
+msgid ""
+"1. All nodes must use the same encryption method.\n"
+"2. Encryption method is NONE if password is empty.\n"
+"3. Default is AES_GCM."
+msgstr ""
+"1. 所有节点必须使用相同的加密方式。\n"
+"2. 若密码为空，则不使用加密。\n"
+"3. 默认加密方式为 AES_GCM。"
+
+#: vnt_helper.py:1994
+msgid "Information on Client Encryption"
+msgstr "客户端加密说明"
+
+#: vnt_helper.py:2000
+msgid "LZ4 is recommended. ZSTD needs compile with --features zstd"
+msgstr "推荐使用 LZ4。ZSTD 需要使用 --features zstd 编译支持"
+
+#: vnt_helper.py:2008
+msgid ""
+"WSS protocol requires server to use reverse proxy with valid SSL certificate"
+msgstr "WSS 协议要求服务器通过具有有效 SSL 证书的反向代理"
+
+#: vnt_helper.py:2011
+msgid "QUIC protocol selected (optimized UDP transport)"
+msgstr ""
+
+#: vnt_helper.py:2014
+#, python-format
+msgid "%s protocol selected"
+msgstr "已选择 %s 协议"
+
+#: vnt_helper.py:2022
+msgid "Will apply autoboot via registry and task scheduler"
+msgstr "将通过注册表和任务计划程序启用开机自启"
+
+#: vnt_helper.py:2024
+msgid "Auto start disabled"
+msgstr "已禁用开机自启"
+
+#: vnt_helper.py:2032
+msgid ""
+"Connection with server will be encrypted with RSA/AES to prevent "
+"eavesdropping"
+msgstr "与服务器的连接将使用 RSA/AES 加密，防止窃听"
+
+#: vnt_helper.py:2034
+msgid "Connection with server will be in plain text"
+msgstr "与服务器的连接将以明文方式进行"
+
+#: vnt_helper.py:2042
+msgid "Bubble Message notifications are enabled"
+msgstr "已启用气泡消息通知"
+
+#: vnt_helper.py:2044
+msgid "Bubble Message notifications are disabled"
+msgstr "已禁用气泡消息通知"
+
+#: vnt_helper.py:2088
+msgid ""
+"Are you sure to \n"
+"(1) OVERWRITE the settings\n"
+"(2) RECONNECT to virtual network?"
+msgstr ""
+"您确定要：\n"
+"(1) 覆盖当前设置\n"
+"(2) 重新连接虚拟网络？"
+
+#: vnt_helper.py:2090 vnt_helper.py:2395 vnt_helper.py:3051 vnt_helper.py:3067
+#: vnt_helper.py:3458 vnt_helper.py:4310 vnt_helper.py:4380 vnt_helper.py:5365
+msgid "Confirmation"
+msgstr "确认"
+
+#: vnt_helper.py:2104 vnt_helper.py:2771
+msgid "Error Updating VNT config"
+msgstr "更新 VNT 配置出错"
+
+#: vnt_helper.py:2118
+msgid "Error establishing connection profile"
+msgstr "建立连接配置文件出错"
+
+#: vnt_helper.py:2133
+msgid ""
+"Token needs to be registered in your server. Nodes with same token form a "
+"virtual LAN."
+msgstr "令牌需在您的服务器上注册。拥有相同令牌的节点将组成一个虚拟局域网。"
+
+#: vnt_helper.py:2137
+msgid "Assign an ID for your machine. Cannot be the same with other nodes."
+msgstr "为您的设备分配一个 ID，不能与其他节点重复。"
+
+#: vnt_helper.py:2141
+msgid "Assign an IP for your machine. Server will assign one if left blank"
+msgstr "为您的设备分配一个 IP。若留空，服务器将自动分配。"
+
+#: vnt_helper.py:2145
+msgid "FORMAT: [Server Name or IP:PORT] Example: vnt.wherewego.top:29872"
+msgstr "格式：[服务器名称或 IP:端口] 示例：vnt.wherewego.top:29872"
+
+#: vnt_helper.py:2150
+msgid ""
+"Password for end-to-end encryption, NOT for connection with server. Leave "
+"blank for no encryption."
+msgstr "用于端到端加密的密码，非服务器连接密码。留空表示不加密。"
+
+#: vnt_helper.py:2228
+#, python-format
+msgid "Error#Invalid IP %s, Server assigns IP"
+msgstr "错误：IP 地址 %s 无效，将由服务器分配 IP"
+
+#: vnt_helper.py:2321
+#, python-format
+msgid "Error %s loading connection profile! Consider RESET"
+msgstr "加载连接配置文件出错：%s！建议重置"
+
+#: vnt_helper.py:2356
+msgid "Valid IP entered"
+msgstr "已输入有效 IP"
+
+#: vnt_helper.py:2360
+msgid "Invalid or Empty IP..."
+msgstr "IP 无效或为空…"
+
+#: vnt_helper.py:2370
+msgid "Valid Domain:Port entered"
+msgstr "已输入有效的域名:端口"
+
+#: vnt_helper.py:2374
+msgid "Invalid or Empty Domain:Port ..."
+msgstr "域名:端口无效或为空…"
+
+#: vnt_helper.py:2395 vnt_helper.py:4380
+msgid "Are you sure to close VNT network and exit?"
+msgstr "确定要关闭 VNT 网络并退出程序吗？"
+
+#: vnt_helper.py:2438 vnt_helper.py:2668
+msgid "Auto Update"
+msgstr "自动更新"
+
+#: vnt_helper.py:2441 vnt_helper.py:2669
+msgid "Manual Update"
+msgstr "手动更新"
+
+#: vnt_helper.py:2444 vnt_helper.py:2670
+msgid "Disable Update"
+msgstr "关闭更新"
+
+#: vnt_helper.py:2459 vnt_helper.py:2672
+msgid "Server Address:  "
+msgstr "服务器地址："
+
+#: vnt_helper.py:2464 vnt_helper.py:2673
+msgid "http://"
+msgstr "http://"
+
+#: vnt_helper.py:2469
+msgid "IP or DOMAIN"
+msgstr "IP 或域名"
+
+#: vnt_helper.py:2474
+msgid ":"
+msgstr "："
+
+#: vnt_helper.py:2479
+msgid "11061"
+msgstr "11061"
+
+#: vnt_helper.py:2487 vnt_helper.py:2675
+msgid "   Update Cycle (sec)"
+msgstr "   更新周期（秒）"
+
+#: vnt_helper.py:2493
+msgid "60"
+msgstr "60"
+
+#: vnt_helper.py:2503 vnt_helper.py:2683
+msgid "Progress"
+msgstr "进度"
+
+#: vnt_helper.py:2517 vnt_helper.py:2678
+msgid "Check Update"
+msgstr "检查更新"
+
+#: vnt_helper.py:2520 vnt_helper.py:2679
+msgid "Save Settings"
+msgstr "保存设置"
+
+#: vnt_helper.py:2822
+msgid "Invalid Host or Port"
+msgstr "主机或端口无效"
+
+#: vnt_helper.py:2828
+msgid "Error saving the settings"
+msgstr "保存设置出错"
+
+#: vnt_helper.py:2832
+msgid "Error Initialize Update Settings, check your URL or file name"
+msgstr "初始化更新设置出错，请检查您的 URL 或文件名"
+
+#: vnt_helper.py:3039
+msgid "Update parameters error"
+msgstr "更新参数错误"
+
+#: vnt_helper.py:3051
+msgid "Update package download completed, update now?"
+msgstr "更新包下载完成，现在更新吗？"
+
+#: vnt_helper.py:3054
+msgid "Error in downloading new package"
+msgstr "下载新更新包出错"
+
+#: vnt_helper.py:3057
+msgid "No new version for an update found"
+msgstr "未找到新版本更新"
+
+#: vnt_helper.py:3060
+msgid "Update temporarily not allowed for this IP"
+msgstr "此 IP 暂时不允许更新"
+
+#: vnt_helper.py:3067
+msgid "An update package is already downloaded, update now?"
+msgstr "已有更新包下载完成，现在更新吗？"
+
+#: vnt_helper.py:3072
+msgid "Downloaded package seems to be corrupted, will be deleted"
+msgstr "下载的更新包似乎已损坏，将被删除"
+
+#: vnt_helper.py:3458
+msgid "Stop downloading update package?"
+msgstr "停止下载更新包？"
+
+#: vnt_helper.py:3775 vnt_helper.py:3901
+msgid "VNT Network Information"
+msgstr "VNT 网络信息"
+
+#: vnt_helper.py:3799 vnt_helper.py:3904
+msgid "Network List"
+msgstr "网络列表"
+
+#: vnt_helper.py:3805 vnt_helper.py:3905
+msgid "Route Table"
+msgstr "路由表"
+
+#: vnt_helper.py:3811 vnt_helper.py:3906
+msgid "My Node Info"
+msgstr "本节点信息"
+
+#: vnt_helper.py:3862 vnt_helper.py:3909 vnt_helper.py:4439 vnt_helper.py:4484
+#: vnt_helper.py:4912 vnt_helper.py:5174
+msgid "Close"
+msgstr "关闭"
+
+#: vnt_helper.py:4113 vnt_helper.py:4367
+msgid "About"
+msgstr "关于"
+
+#: vnt_helper.py:4118
+msgid "Show log info"
+msgstr "显示日志信息"
+
+#: vnt_helper.py:4121
+msgid "Connection Information"
+msgstr "连接信息"
+
+#: vnt_helper.py:4128
+msgid "Remove Autostart"
+msgstr "移除开机自启"
+
+#: vnt_helper.py:4131
+msgid "Set Autostart"
+msgstr "设置开机自启"
+
+#: vnt_helper.py:4137
+msgid "Toggle on VNT Connection"
+msgstr "启用 VNT 连接"
+
+#: vnt_helper.py:4140
+msgid "Toggle off VNT Connection"
+msgstr "关闭 VNT 连接"
+
+#: vnt_helper.py:4148
+msgid "Disable Notification"
+msgstr "关闭条幅通知"
+
+#: vnt_helper.py:4151
+msgid "Enable Notification"
+msgstr "启用条幅通知"
+
+#: vnt_helper.py:4170
+msgid "Display Language"
+msgstr "显示语言"
+
+#: vnt_helper.py:4177
+msgid "Settings"
+msgstr "设置"
+
+#: vnt_helper.py:4180
+msgid "Manage Profiles"
+msgstr "管理配置文件"
+
+#: vnt_helper.py:4183
+msgid "Update"
+msgstr "更新"
+
+#: vnt_helper.py:4186
+msgid "Reset"
+msgstr "重置"
+
+#: vnt_helper.py:4191
+msgid "Exit"
+msgstr "退出"
+
+#: vnt_helper.py:4295
+msgid "AutoRun is turned ON, VNT Helper will automatically run on next boot"
+msgstr "已启用开机自启，VNT 助手将在下次启动时自动运行"
+
+#: vnt_helper.py:4298
+msgid ""
+"AutoRun is turned OFF, VNT Helper will need to be manually run on next boot"
+msgstr "已关闭开机自启，VNT 助手在下次启动时将不会自动运行"
+
+#: vnt_helper.py:4303
+msgid ""
+"Fail to change AutoRun setting, Try manually change regedit and "
+"taskscheduler!"
+msgstr "更改开机自启设置失败，请尝试手动修改注册表和任务计划程序！"
+
+#: vnt_helper.py:4309
+msgid ""
+"Are you sure to clean VNT network settings?\n"
+"\n"
+"VNT Helper will stop running. Next time run will be a fresh start."
+msgstr ""
+"确定要清除 VNT 网络设置吗？\n"
+"\n"
+"VNT 助手将停止运行，下次启动将为全新开始。"
+
+#: vnt_helper.py:4339
+#, python-brace-format
+msgid ""
+"Error Cleaning VNT Setting. You may consider (1) manually "
+"remove                          {self.config_fn} in the VNT folder. (2) "
+"REGEDIT to find MANAGE_VNT key and remove it"
+msgstr ""
+"清除 VNT 设置出错。您可以：(1) 手动删除 VNT 文件夹中的 {self.config_fn}；(2) "
+"在注册表中查找并删除 MANAGE_VNT 键"
+
+#: vnt_helper.py:4341
+msgid "Manage VNT not Initialized"
+msgstr "VNT 管理未初始化"
+
+#: vnt_helper.py:4354
+msgid "Command line parameters:\n"
+msgstr "命令行参数：\n"
+
+#: vnt_helper.py:4354
+msgid "optional arguments:\n"
+msgstr "可选参数：\n"
+
+#: vnt_helper.py:4355
+msgid "     show this help message and exit\n"
+msgstr "      显示此帮助信息并退出\n"
+
+#: vnt_helper.py:4356
+msgid "   set DEBUG mode in console version\n"
+msgstr "   在带控制台的版本中开启调试       \n"
+
+#: vnt_helper.py:4357
+msgid "run in background, no tray icon\n"
+msgstr "后台运行，不显示托盘图标\n"
+
+#: vnt_helper.py:4358
+msgid "    get the version information\n"
+msgstr "     获取版本信息\n"
+
+#: vnt_helper.py:4373
+msgid "\"This is a crazy world. By coding sometimes we ignore it...\""
+msgstr "“代码的理性，有时候会让你暂时忘记世界的疯狂...”"
+
+#: vnt_helper.py:4373
+msgid "By the Author in an unforgettable spring of 2022 in Shanghai."
+msgstr "作者：写于 2022 年难忘的春天，上海"
+
+#: vnt_helper.py:4393 vnt_helper.py:4473
+msgid "VNT Log Viewer"
+msgstr "VNT 日志查看器"
+
+#: vnt_helper.py:4428 vnt_helper.py:4476
+msgid "Time"
+msgstr "时间"
+
+#: vnt_helper.py:4429 vnt_helper.py:4476
+msgid "Level"
+msgstr "级别"
+
+#: vnt_helper.py:4430 vnt_helper.py:4476
+msgid "PID"
+msgstr "进程 ID"
+
+#: vnt_helper.py:4431 vnt_helper.py:4476
+msgid "Message"
+msgstr "消息"
+
+#: vnt_helper.py:4440 vnt_helper.py:4485
+msgid "Save"
+msgstr "保存"
+
+#: vnt_helper.py:4522
+msgid ""
+"Save current log content?\n"
+"The original log file will be overwritten with the lines currently displayed."
+msgstr ""
+"是否保存当前日志内容？\n"
+"原始日志文件将被当前显示的内容覆盖。"
+
+#: vnt_helper.py:4523
+msgid "Confirm Save"
+msgstr "确认保存"
+
+#: vnt_helper.py:4557
+msgid "Log saved successfully!"
+msgstr "日志保存成功！"
+
+#: vnt_helper.py:4557
+msgid "Success"
+msgstr "成功"
+
+#: vnt_helper.py:4560
+#, python-brace-format
+msgid ""
+"Failed to save log:\n"
+"{e}"
+msgstr ""
+"保存日志失败：\n"
+"{e}"
+
+#: vnt_helper.py:4560 vnt_helper.py:4617 vnt_helper.py:4650 vnt_helper.py:4955
+#: vnt_helper.py:5091 vnt_helper.py:5329 vnt_helper.py:5376 vnt_helper.py:5380
+#: vnt_helper.py:5568
+msgid "Error"
+msgstr ""
+
+#: vnt_helper.py:4648
+msgid "Log file and view cleared."
+msgstr "日志文件和视图已清空。"
+
+#: vnt_helper.py:4648 vnt_helper.py:5088
+msgid "Info"
+msgstr "信息"
+
+#: vnt_helper.py:4650
+#, python-brace-format
+msgid "Clear failed: {e}"
+msgstr "清空失败：{e}"
+
+#: vnt_helper.py:4758
+msgid "VNT Config Editor (Advanced User Only)"
+msgstr "VNT 配置编辑器（仅限高级用户）"
+
+#: vnt_helper.py:4884
+msgid "Enabled"
+msgstr ""
+
+#: vnt_helper.py:4903
+msgid "Enter one item per line"
+msgstr ""
+
+#: vnt_helper.py:4912
+#, fuzzy
+msgid "Save and Exit"
+msgstr "保存并退出…"
+
+#: vnt_helper.py:4912
+#, fuzzy
+msgid "Save As..."
+msgstr "另存为…"
+
+#: vnt_helper.py:4954
+#, python-brace-format
+msgid ""
+"Failed to load YAML:\n"
+"{e}"
+msgstr ""
+"加载 YAML 失败：\n"
+"{e}"
+
+#: vnt_helper.py:5047
+#, python-brace-format
+msgid "Required field '{field}' is empty!"
+msgstr "必须的内容 '{field}' 为空!"
+
+#: vnt_helper.py:5048
+msgid "Validation Error"
+msgstr "验证错误"
+
+#: vnt_helper.py:5073
+msgid "Save YAML file"
+msgstr "保存 YAML 文件"
+
+#: vnt_helper.py:5087
+msgid ""
+"Saved successfully!\n"
+"\n"
+"Note: This YAML file will be converted to TOML format by vnt_daemon."
+msgstr ""
+"成功保存!\n"
+"\n"
+"注意: 这个 YAML 文件会被转码为 TOML 格式供 vnt_daemon 使用."
+
+#: vnt_helper.py:5090
+#, python-brace-format
+msgid ""
+"Failed to save:\n"
+"{e}"
+msgstr ""
+"保存失败：\n"
+"{e}"
+
+#: vnt_helper.py:5137
+msgid "Manage VNT Profiles"
+msgstr "管理 VNT 配置文件"
+
+#: vnt_helper.py:5169
+msgid "New..."
+msgstr "新建…"
+
+#: vnt_helper.py:5170
+msgid "Apply..."
+msgstr "应用…"
+
+#: vnt_helper.py:5171
+msgid "Edit"
+msgstr "编辑"
+
+#: vnt_helper.py:5172
+msgid "Import"
+msgstr "导入"
+
+#: vnt_helper.py:5173
+msgid "Delete"
+msgstr "删除"
+
+#: vnt_helper.py:5213 vnt_helper.py:5248
+msgid "Current profile:"
+msgstr "当前配置："
+
+#: vnt_helper.py:5313
+#, python-brace-format
+msgid ""
+"The file '{}' already exists in the current directory.\n"
+"Do you want to overwrite it?"
+msgstr ""
+"文件 '{}' 在工作目录已经存在，\n"
+"是否覆盖已有文件？"
+
+#: vnt_helper.py:5315
+#, fuzzy
+msgid "Confirm Overwrite"
+msgstr "确认保存"
+
+#: vnt_helper.py:5329
+#, python-brace-format
+msgid ""
+"The selected file does not appear to be a valid VNT setting profile:\n"
+"{pathname}"
+msgstr ""
+"所选文件似乎不是有效的 VNT 配置文件：\n"
+"{pathname}"
+
+#: vnt_helper.py:5365
+#, python-brace-format
+msgid ""
+"Are you sure to delete the selected profile?\n"
+"\n"
+"This will also delete the file:\n"
+"{fn}"
+msgstr ""
+"确定要删除所选配置吗？\n"
+"\n"
+"这也将删除文件：\n"
+"{fn}"
+
+#: vnt_helper.py:5376
+#, python-brace-format
+msgid ""
+"Failed to delete profile file:\n"
+"{e}"
+msgstr ""
+"删除配置文件失败：\n"
+"{e}"
+
+#: vnt_helper.py:5380
+#, python-brace-format
+msgid ""
+"Failed to update profile list in:\n"
+"{fn}\n"
+"You may need to manually update it"
+msgstr ""
+"更新配置列表失败：\n"
+"{fn}\n"
+"您可能需要手动更新"
+
+#: vnt_helper.py:5568
+#, python-brace-format
+msgid ""
+"Cannot open URL:\n"
+"{e}"
+msgstr ""
+"无法打开链接：\n"
+"{e}"
+
+#: vnt_helper.py:5600
+#, python-brace-format
+msgid "Version INFO: {version}"
+msgstr "版本信息：{version}"
+
+#: vnt_helper.py:5623
+msgid "OK"
+msgstr "确定"
+
+#~ msgid "UDP"
+#~ msgstr "UDP"
+
+#, python-brace-format
+#~ msgid "VNT Helper Version Update : {VNT_HELPER_VERSION}"
+#~ msgstr "VNT 助手版本更新：{VNT_HELPER_VERSION}"
+
+#, python-brace-format
+#~ msgid "Error reading log: {e}"
+#~ msgstr "读取日志出错：{e}"
+
+#~ msgid "root"
+#~ msgstr "根节点"
+
+#, python-brace-format
+#~ msgid ""
+#~ "Failed to update value:\n"
+#~ "{e}"
+#~ msgstr ""
+#~ "更新值失败：\n"
+#~ "{e}"
+
+#~ msgid "Saved successfully!"
+#~ msgstr "保存成功！"
+
+#~ msgid "Update settings are saved"
+#~ msgstr "更新设置已保存"
+
+#~ msgid "Connection profile established before advanced editing"
+#~ msgstr "高级编辑前已成功建立连接配置"
+
+#~ msgid "Error establishing connection profile before advanced editing"
+#~ msgstr "高级编辑前建立连接配置失败"
+
+#~ msgid "A powerful tool for managing VNT profiles."
+#~ msgstr "一款强大的 VNT 配置管理工具。"
+
+#~ msgid "Simplicity is the ultimate sophistication. — Leonardo da Vinci"
+#~ msgstr "简约即终极的精致。——列奥纳多·达·芬奇"

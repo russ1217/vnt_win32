@@ -1,0 +1,1 @@
+C:\RussApp\vnt\vnt_updater.exe -d C:\RussApp\vnt -r C:\Users\RUSS-Z~1\AppData\Local\Temp\_MEI131642\ -n vnt-cli.exe,vnt_daemon.exe,wintun.dll,vnt_config_template.yaml,vnt_config_all.yaml,Notepad3.exe -f vnt_helper_v2_update.zip -e vnt_helper_v2.exe -l vnt_cli.log

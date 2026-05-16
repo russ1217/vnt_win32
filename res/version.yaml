@@ -1,0 +1,4 @@
+version: v4_2026.01.25.03
+checksum: 5afe8bcc3c1862d224ba63f928cf86c52a26cbc6cd3ec96d59d868da1d37a502
+exclude: 172.16.0.1
+update_file_url: http://172.16.0.4:11060/files/vnt_helper.zip
