@@ -7,6 +7,6 @@ notification_enabled: true
 display_language: en
 autorun_cli_on_startup: true
 ipc_port: 58432
-config_name: C:\RussApp\v4\zenbook.yaml
-profile_list: zenbook
+config_name: C:\RussApp\v4\z1.yaml
+profile_list: z1
 previous_profile: ''

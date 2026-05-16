@@ -1601,11 +1601,6 @@ class VNT_Main_Window(wx.Frame):
         self.auto_start.Bind(wx.EVT_CHECKBOX, self.on_auto_start_changed)
         gSizer4.Add(self.auto_start, 0, wx.ALL, scale(5))
 
-        self.Encrypted_Server_Connection = FocusableCheckBox(panel, _("Encrypted Server Connection"))
-        self.Encrypted_Server_Connection.SetValue(True)
-        self.Encrypted_Server_Connection.Bind(wx.EVT_CHECKBOX, self.on_encrypted_server_connection_changed)
-        gSizer4.Add(self.Encrypted_Server_Connection, 0, wx.ALL, scale(5))
-
         self.Notification = FocusableCheckBox(panel, _("Show Notification"))
         self.Notification.SetValue(True)
         self.Notification.Bind(wx.EVT_CHECKBOX, self.on_notification_changed)
@@ -1706,7 +1701,6 @@ class VNT_Main_Window(wx.Frame):
         self.Protocol.Bind(wx.EVT_CHOICE, self.on_protocol_change)
 
         self.auto_start.Bind(wx.EVT_CHECKBOX, self.on_auto_start_changed)
-        self.Encrypted_Server_Connection.Bind(wx.EVT_CHECKBOX, self.on_encrypted_server_connection_changed)
         self.Notification.Bind(wx.EVT_CHECKBOX, self.on_notification_changed)
 
         self.Advanced.Bind(wx.EVT_BUTTON, self._advanced_yaml_edit)
@@ -1727,8 +1721,7 @@ class VNT_Main_Window(wx.Frame):
         self.Compression.MoveAfterInTabOrder(self.Protocol)
         self.ClientEncryption.MoveAfterInTabOrder(self.Compression)
         self.auto_start.MoveAfterInTabOrder(self.ClientEncryption)
-        self.Encrypted_Server_Connection.MoveAfterInTabOrder(self.auto_start)
-        self.Notification.MoveAfterInTabOrder(self.Encrypted_Server_Connection)
+        self.Notification.MoveAfterInTabOrder(self.auto_start)
         self.Advanced.MoveAfterInTabOrder(self.Notification)
         self.m_sdbSizer1OK.MoveAfterInTabOrder(self.Advanced)
         self.m_sdbSizer1Cancel.MoveAfterInTabOrder(self.m_sdbSizer1OK)
@@ -1767,7 +1760,6 @@ class VNT_Main_Window(wx.Frame):
         self.ClientEncryption.SetItems([_("aes_gcm"), _("chacha20_poly1305"), _("chacha20"), _("aes_cbc"), _("aes_ecb"), _("sm4_cbc"), _("xor")])
 
         self.auto_start.SetLabel(_("Auto Start"))
-        self.Encrypted_Server_Connection.SetLabel(_("Encrypted Server Connection"))
         self.Notification.SetLabel(_("Show Notification"))
 
         self.Advanced.SetLabel(_("Manually edit yaml file setting for VNT (Advanced User Only) ..."))
@@ -1902,16 +1894,6 @@ class VNT_Main_Window(wx.Frame):
         self.Refresh()
         event.Skip()
 
-    def on_encrypted_server_connection_changed(self, event):
-        is_checked = self.Encrypted_Server_Connection.GetValue()
-        self.help_msg.SetForegroundColour("BLACK")
-        if is_checked:
-            self.help_msg.Label = _("Connection with server will be encrypted with RSA/AES to prevent eavesdropping")
-        else:
-            self.help_msg.Label = _("Connection with server will be in plain text")
-        self.Refresh()
-        event.Skip()
-
     def on_notification_changed(self, event):
         is_checked = self.Notification.GetValue()
         self.help_msg.SetForegroundColour("BLACK")
@@ -1936,6 +1918,22 @@ class VNT_Main_Window(wx.Frame):
             dlg.Destroy()
 
         event.Skip()
+
+    def on_button_ok(self, event):
+        global VNT_CLIENT_NAME, WIN_TUNE_DLL
+
+        vnt_conf = VNT_Config(self.workingdir, self.config_fn, self.logger)
+        previous_conf = vnt_conf.get_value(VNT_Config.KEY_VNT_PREV_PROFILE)
+        if previous_conf is not None and previous_conf != '':
+            vnt_conf.set_value(VNT_Config.KEY_VNT_CONNECTION_CONFIG_YAML, previous_conf)
+            vnt_conf.set_value(VNT_Config.KEY_VNT_PREV_PROFILE, '')
+
+        t = _("Are you sure to \n(1) OVERWRITE the settings\n(2) RECONNECT to virtual network?")
+
+        if win32api.MessageBox(0, t, _("Confirmation"), win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) != win32con.IDYES:
+            return
+
+        vnt_conf.set_value(VNT_Config.KEY_VNT_NOTIFICATION_ENABLED, self.Notification.GetValue())
 
     def on_button_select(self, event):
         self.Hide()
@@ -2102,15 +2100,12 @@ class VNT_Main_Window(wx.Frame):
         compression_method = self.Compression.GetString(self.Compression.GetSelection()).lower()
         data['compress'] = (compression_method == 'lz4')
 
-        # 服务器加密
-        data['server_encrypt'] = self.Encrypted_Server_Connection.GetValue()
-
         # 端到端加密模型
         e2e_cipher_model = self.ClientEncryption.GetString(self.ClientEncryption.GetSelection()).lower()
         data['cipher_model'] = e2e_cipher_model
 
-        # VNT2 安全配置：自签名证书使用 skip 模式
-        data['cert_mode'] = 'skip'
+        # VNT2 安全配置：cert_mode 由编辑器管理，这里不设置默认值
+        # 如果 YAML 文件中不存在 cert_mode，vnt_daemon 转换时会使用默认值
 
         connction_conf = VNT_Config(self.workingdir, os.path.basename(fn), self.logger)
         self.logger.write(f"Connection file to write {fn}")
@@ -2235,14 +2230,6 @@ class VNT_Main_Window(wx.Frame):
             if index == -1:
                 index = 0
         self.ClientEncryption.SetSelection(index)
-
-        try:
-            if data["server_encrypt"] is True:
-                self.Encrypted_Server_Connection.SetValue(True)
-            else:
-                self.Encrypted_Server_Connection.SetValue(False)
-        except Exception:
-            self.Encrypted_Server_Connection.SetValue(False)
 
     def _is_valid_virtual_IP(self, event):
         if Internet_Connectivity_Monitor.is_valid_IP(self.VirtualIP.GetValue()):
@@ -4699,29 +4686,105 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
         return addr.startswith("tcp://")
 
     def populate_tree(self, data: Union[Dict, List], parent_item, key_path: tuple):
-        important_keys = {'token', 'device_id', 'name', 'server_address', 'password', 'ip', 'server_encrypt', 'cipher_model', 'compressor'}
+        # VNT2 完整参数字段列表（基于 vnt2_conf_toml_example.toml）
+        all_important_keys = {
+            # 核心必填字段
+            'network_code', 'server',
+            # 设备配置
+            'device_id', 'device_name', 'password', 'ip',
+            # 网络优化
+            'compress', 'rtx', 'fec', 'no_punch',
+            # 高级网络配置
+            'input', 'output', 'no_nat', 'port_mapping', 'allow_mapping',
+            # 端口和MTU
+            'ctrl_port', 'tunnel_port', 'mtu',
+            # TUN网卡
+            'tun_name', 'no_tun',
+            # 安全配置
+            'cert_mode',
+            # STUN配置
+            'udp_stun', 'tcp_stun',
+            # 加密相关
+            'cipher_model'
+        }
+
+        
+        # 主UI中直接显示的字段（需要标红）
+        main_ui_keys = {
+            'network_code',      # Token
+            'device_id',         # DeviceID
+            'device_name',       # DeviceID (同名)
+            'server',            # ServerIPPort + Protocol
+            'password',          # Network_Password
+            'ip',                # VirtualIP
+            'compress',          # Compression
+            'cipher_model',      # ClientEncryption
+            'cert_mode',         # 证书验证模式（高级编辑器管理）
+        }
 
         if isinstance(data, dict):
-            for key, value in data.items():
-                new_key_path = key_path + (key,)
-                is_important = key in important_keys
+            # 如果是根节点（key_path为空），确保所有重要字段都显示
+            if len(key_path) == 0 and parent_item == self.root:
+                # 先显示已存在的字段
+                existing_keys = set()
+                for key, value in data.items():
+                    existing_keys.add(key)
+                    new_key_path = key_path + (key,)
+                    is_main_ui = key in main_ui_keys
 
-                if len(new_key_path) == 1 and key == 'tcp':
-                    computed_tcp = self.compute_tcp_value()
-                    display_val = str(computed_tcp)
-                    item = self.tree.AppendItem(parent_item, f"{key}: {display_val}")
-                    if is_important:
-                        self.tree.SetItemTextColour(item, wx.RED)
-                else:
-                    display_val = self.preview_value(value)
-                    item = self.tree.AppendItem(parent_item, f"{key}: {display_val}")
+                    if len(new_key_path) == 1 and key == 'tcp':
+                        computed_tcp = self.compute_tcp_value()
+                        display_val = str(computed_tcp)
+                        item = self.tree.AppendItem(parent_item, f"{key}: {display_val}")
+                        if is_main_ui:
+                            self.tree.SetItemTextColour(item, wx.RED)
+                    else:
+                        display_val = self.preview_value(value)
+                        item = self.tree.AppendItem(parent_item, f"{key}: {display_val}")
 
-                    is_leaf = not isinstance(value, (dict, list))
-                    if is_leaf and is_important:
-                        self.tree.SetItemTextColour(item, wx.RED)
+                        is_leaf = not isinstance(value, (dict, list))
+                        if is_leaf and is_main_ui:
+                            self.tree.SetItemTextColour(item, wx.RED)
 
-                    if isinstance(value, (dict, list)) and not (len(new_key_path) == 1 and key == 'tcp'):
-                        self.populate_tree(value, item, new_key_path)
+                        if isinstance(value, (dict, list)) and not (len(new_key_path) == 1 and key == 'tcp'):
+                            self.populate_tree(value, item, new_key_path)
+
+                # 再添加缺失的重要字段（使用默认值）
+                for key in sorted(all_important_keys):
+                    if key not in existing_keys and key != 'tcp':  # tcp是计算字段，不手动添加
+                        default_value = self._get_default_value(key)
+                        new_key_path = (key,)
+                        display_val = self.preview_value(default_value)
+                        item = self.tree.AppendItem(parent_item, f"{key}: {display_val}")
+                        
+                        # 只有主UI字段才标红
+                        if key in main_ui_keys:
+                            self.tree.SetItemTextColour(item, wx.RED)
+                        
+                        # 将默认值添加到原始数据中
+                        data[key] = default_value
+            else:
+                # 非根节点，按原逻辑处理
+                for key, value in data.items():
+                    new_key_path = key_path + (key,)
+                    is_main_ui = key in main_ui_keys
+
+                    if len(new_key_path) == 1 and key == 'tcp':
+                        computed_tcp = self.compute_tcp_value()
+                        display_val = str(computed_tcp)
+                        item = self.tree.AppendItem(parent_item, f"{key}: {display_val}")
+                        if is_main_ui:
+                            self.tree.SetItemTextColour(item, wx.RED)
+                    else:
+                        display_val = self.preview_value(value)
+                        item = self.tree.AppendItem(parent_item, f"{key}: {display_val}")
+
+                        is_leaf = not isinstance(value, (dict, list))
+                        if is_leaf and is_main_ui:
+                            self.tree.SetItemTextColour(item, wx.RED)
+
+                        if isinstance(value, (dict, list)) and not (len(new_key_path) == 1 and key == 'tcp'):
+                            self.populate_tree(value, item, new_key_path)
 
         elif isinstance(data, list):
             for idx, value in enumerate(data):
@@ -4729,6 +4792,41 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
                 item = self.tree.AppendItem(parent_item, f"[{idx}]: {self.preview_value(value)}")
                 if isinstance(value, (dict, list)):
                     self.populate_tree(value, item, new_key_path)
+
+    def _get_default_value(self, key: str):
+        """根据字段名返回合理的默认值"""
+        defaults = {
+            # 字符串类型
+            'network_code': '',
+            'server': 'quic://',
+            'device_id': '',
+            'device_name': '',
+            'password': '',
+            'ip': '',
+            'tun_name': 'vnt-tun',
+            'cert_mode': 'skip',
+            'cipher_model': 'aes_gcm',
+            # 布尔类型
+            'compress': False,
+            'rtx': False,
+            'fec': False,
+            'no_punch': False,
+            'no_tun': False,
+
+            'no_nat': False,
+            'allow_mapping': False,
+            # 整数类型
+            'ctrl_port': 11233,
+            'tunnel_port': 0,
+            'mtu': 1400,
+            # 列表类型
+            'input': [],
+            'output': [],
+            'port_mapping': [],
+            'udp_stun': [],
+            'tcp_stun': [],
+        }
+        return defaults.get(key, '')
 
     def preview_value(self, value) -> str:
         if isinstance(value, (dict, list)):
@@ -4891,6 +4989,7 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
                         pass
                 elif isinstance(first, str) and key_part == first:
                     match = True
+
 
                 if match:
                     return find_item_by_path(child, path[1:])
