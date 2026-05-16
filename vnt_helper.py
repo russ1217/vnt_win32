@@ -49,18 +49,19 @@ from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-VNT_HELPER_VERSION = "v4_2026.01.24.06"
+VNT_HELPER_VERSION = "v4_2026.01.25.03"
 VNT_CLI_LOG_FILE = 'vnt_cli.log'
 VNT_HELPER_CONFIG_FILE = "vnt_helper.yaml"
-VNT_CLIENT_NAME = "vnt-cli.exe"
+VNT_CLIENT_NAME = "vnt2_cli.exe"  # VNT 2.0 客户端
 WIN_TUNE_DLL = "wintun.dll"
 VNT_CONFIG_TEMPLATE_FILE = 'vnt_config_template.yaml'
 VNT_CONFIG_ALL_FILE = 'vnt_config_all.yaml'
 VNT_TRAY_ICON = 'vnt.png'
 VNT_SERVICE_EXE = "vnt_service.exe"
 VNT_HELPER_ICON = 'vnt_helper.ico'
+VNT_CTRL_EXE = "vnt2_ctrl.exe"  # VNT 2.0 控制工具
 
-RESOURCE_FILE_NAMES = [VNT_CLIENT_NAME, VNT_SERVICE_EXE, WIN_TUNE_DLL, VNT_CONFIG_TEMPLATE_FILE, VNT_CONFIG_ALL_FILE, VNT_TRAY_ICON, VNT_HELPER_ICON]
+RESOURCE_FILE_NAMES = [VNT_CLIENT_NAME, VNT_CTRL_EXE, VNT_SERVICE_EXE, WIN_TUNE_DLL, VNT_CONFIG_TEMPLATE_FILE, VNT_CONFIG_ALL_FILE, VNT_TRAY_ICON, VNT_HELPER_ICON]
 DEFAULT_LANG = 'en'  # 或 'zh_CN' 默认语言（可从配置、系统或用户选择读取）
 
 _ = None
@@ -3653,12 +3654,12 @@ class VNT_Information_Window(wx.Frame):
             id=wx.ID_ANY,
             title=_(u"VNT Network Information"),
             pos=wx.DefaultPosition,
-            size=(792, 560),  # 逻辑尺寸（100% DPI）
+            size=(896, 600),  # 逻辑尺寸（100% DPI），调整为原 1120px 的 80%
             style=wx.CAPTION | wx.STATIC_BORDER | wx.TAB_TRAVERSAL,
         )
 
         # Step 2: 应用 DPI 缩放到窗口大小
-        logical_window_size = (792, 565)
+        logical_window_size = (896, 600)
         scaled_window_size = self.FromDIP(logical_window_size)
         self.SetSize(scaled_window_size)
         self.SetMinSize(scaled_window_size)
@@ -3729,7 +3730,7 @@ class VNT_Information_Window(wx.Frame):
         )
 
         # Cell Defaults
-        self.m_grid3.SetDefaultCellAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
+        self.m_grid3.SetDefaultCellAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)  # 改为左对齐，更易阅读
         self.m_grid3.SetRowLabelSize(0)
         self.m_grid3.SetColLabelSize(0)
 
@@ -3761,6 +3762,7 @@ class VNT_Information_Window(wx.Frame):
         self.vnt_app = vnt_app
         self.check_vnt_info_daemon = None
         self.exit_flag = threading.Event()
+        self.last_data_hash = {}  # 用于检测数据是否变化
 
     def __del__(self):
         pass
@@ -3843,6 +3845,10 @@ class VNT_Information_Window(wx.Frame):
                 time.sleep(0.1)
         self.exit_flag.clear()
 
+        # 初始化数据哈希记录字典，用于检测数据变化
+        if not hasattr(self, 'last_data_hash'):
+            self.last_data_hash = {}
+        
         self.check_vnt_info_daemon = threading.Thread(target=self._check_vnt_info, args=("--info", self.exit_flag,))
         self.check_vnt_info_daemon.start()
         event.Skip()
@@ -3867,96 +3873,204 @@ class VNT_Information_Window(wx.Frame):
 
         self.m_grid3.AppendRows(row_count)
         self.m_grid3.AppendCols(col_count)
+        
+        # 根据命令类型设置合理的列宽（针对 VNT2 输出格式优化）
         if cmd == "--list":
-            grid_cols_size = [140, 240, 160, 80, 110]
+            # clients 命令：IP | Name | Version | Online | P2P | RTT | Loss | Last Connected Time
+            grid_cols_size = [120, 180, 80, 70, 70, 60, 70, 180]
         elif cmd == "--route":
-            grid_cols_size = [140, 210, 60, 110, 230]
+            # route 命令：Destination IP | Metric | RTT (ms) | Remote Address
+            grid_cols_size = [140, 80, 100, 350]
         elif cmd == "--info":
-            grid_cols_size = [240, 300, 200, 10, 10]
+            # info 命令：Key | Value
+            grid_cols_size = [250, 500]
         else:
             grid_cols_size = [140, 240, 60, 80, 230]
 
         for i in range(col_count):
-            self.m_grid3.SetColSize(i, grid_cols_size[i])
+            if i < len(grid_cols_size):
+                self.m_grid3.SetColSize(i, grid_cols_size[i])
+            else:
+                # 如果列数超过预设，使用默认宽度
+                self.m_grid3.SetColSize(i, 120)
 
     def _check_vnt_info(self, cmd, exit_flag):
-        global VNT_CLIENT_NAME
+        """
+        VNT2 信息查询方法
+        使用 vnt2_ctrl.exe 替代 vnt-cli.exe
+        
+        命令映射:
+        - --list → clients (客户端信息列表)
+        - --route → route (路由信息)
+        - --info → info (程序信息)
+        """
+        import hashlib
+        global VNT_CTRL_EXE
 
-        working_vnt_prog = os.path.join(self.workingdir, VNT_CLIENT_NAME)
-        text = ""
+        working_vnt_ctrl = os.path.join(self.workingdir, VNT_CTRL_EXE)
         last_row_count = 0
         last_col_count = 0
 
-        while True:
+        # VNT1 到 VNT2 的命令映射
+        cmd_mapping = {
+            "--list": "clients",
+            "--route": "route",
+            "--info": "info"
+        }
+        
+        vnt2_cmd = cmd_mapping.get(cmd, cmd)
+        self.logger.write(f"[GUI DEBUG] Info Daemon started for cmd={cmd}, mapped to vnt2_cmd={vnt2_cmd}", 'debug')
 
-            if exit_flag.is_set():
-                self.logger.write(f"Info Daemon {cmd} Exit ...")
-                return
+        while not exit_flag.is_set():
+            
             try:
-                p = subprocess.Popen("\"" + working_vnt_prog + "\"" + " " + cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            except Exception as e:
-                self.logger.write(f"Failed to start vnt-cli.exe: {e}", 'critical')
-                return
+                # VNT2 使用子命令格式: vnt2_ctrl.exe <command>
+                self.logger.write(f"[GUI DEBUG] Starting process: {working_vnt_ctrl} {vnt2_cmd}", 'debug')
+                p = subprocess.Popen(
+                    "\"" + working_vnt_ctrl + "\" " + vnt2_cmd,
+                    shell=True,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+                
+                # 等待进程完成（VNT2 命令是瞬时执行的）
+                stdout, stderr = p.communicate(timeout=5)
+                
+                if p.returncode != 0:
+                    self.logger.write(f"[GUI DEBUG] Command failed with return code {p.returncode}: {stderr.decode('utf-8', 'ignore')}", 'error')
+                    time.sleep(2)  # 失败时延长重试间隔
+                    continue
+                
+                # 解码输出
+                text = stdout.decode('utf-8', 'ignore')
+                self.logger.write(f"[GUI DEBUG] Received {len(text)} bytes of output", 'debug')
+                
+                if not text or len(text.strip()) == 0:
+                    self.logger.write(f"[GUI DEBUG] Empty output received", 'debug')
+                    time.sleep(2)  # 空输出时延长重试间隔
+                    continue
+                
+                # 清理 ANSI 转义码（颜色代码）
+                # ANSI 转义码格式: \x1b[...m 或 \x1b(...\)
+                ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+                text = ansi_escape.sub('', text)
+                self.logger.write(f"[GUI DEBUG] Cleaned ANSI escape codes, now {len(text)} bytes", 'debug')
 
-            while p.poll() is None:
-
-                for line in p.stdout:
-                    text = text + line.decode('utf-8', 'ignore')
-
+                # 根据命令类型选择不同的解析策略
+                data = []
+                
                 if cmd == "--info":
-                    text = text.replace("Name:", "Name")
-                    text = text.replace("Virtual ip:", "Virtual_IP")
-                    text = text.replace("Virtual gateway:", "Virtual_Gateway")
-                    text = text.replace("Virtual netmask:", "Virtual_Netmask")
-                    text = text.replace("Connection status:", "Connection_Status")
-                    text = text.replace("NAT type:", "NAT_Type")
-                    text = text.replace("Relay server:", "Relay_Server")
-                    text = text.replace("Udp listen:", "UDP_Listen")
-                    text = text.replace("Tcp listen:", "TCP_Listen")
-                    text = text.replace("Public ips:", "Public_IPs")
-                    text = text.replace("Local addr:", "Local_Addr")
-                    text = text.replace("IPv6:", "IPv6")
+                    # info 命令输出的是键值对格式，需要特殊处理
+                    lines = text.strip().split("\n")
+                    for line in lines:
+                        line = line.strip()
+                        # 跳过装饰行和空行
+                        if not line or line.startswith('---') or line.startswith('==='):
+                            continue
+                        
+                        # 尝试解析 "Key: Value" 格式
+                        if ':' in line:
+                            parts = line.split(':', 1)  # 只分割第一个冒号
+                            if len(parts) == 2:
+                                key = parts[0].strip()
+                                value = parts[1].strip()
+                                if key and value:
+                                    data.append([key, value])
+                    
+                    self.logger.write(f"[GUI DEBUG] Parsed {len(data)} key-value pairs from info output", 'debug')
+                    
+                else:
+                    # clients 和 route 命令输出的是表格格式
+                    lines = text.strip().split("\n")
+                    self.logger.write(f"[GUI DEBUG] Parsed {len(lines)} lines from output", 'debug')
+                    
+                    # 解析表格数据
+                    for line in lines:
+                        line = line.strip()
+                        # 跳过空行和表格边框行
+                        if not line or line.startswith('+') or line.startswith('---'):
+                            continue
+                        
+                        # 处理表头行和数据行
+                        if line.startswith('|'):
+                            # 移除首尾的 | 符号，然后按 | 分割
+                            cells = [cell.strip() for cell in line.split('|')[1:-1]]
+                            if cells and any(cell for cell in cells):  # 确保不是全空行
+                                data.append(cells)
+                    
+                    # 对 clients 命令的数据按 IP 地址排序（保留表头）
+                    if cmd == "--list" and len(data) > 1:
+                        header = data[0]  # 保存表头
+                        data_rows = data[1:]  # 获取数据行
+                        
+                        # 定义 IP 地址排序函数
+                        def ip_sort_key(row):
+                            """将 IP 地址转换为可排序的元组"""
+                            try:
+                                if row and len(row) > 0:
+                                    ip_str = row[0]  # IP 在第一列
+                                    # 将 IP 地址转换为元组用于排序 (例如: "10.10.0.5" -> (10, 10, 0, 5))
+                                    parts = ip_str.split('.')
+                                    if len(parts) == 4:
+                                        return tuple(int(p) for p in parts)
+                            except (ValueError, IndexError):
+                                pass
+                            return (999, 999, 999, 999)  # 无效 IP 排到最后
+                        
+                        # 按 IP 地址排序数据行
+                        data_rows.sort(key=ip_sort_key)
+                        
+                        # 重新组合：表头 + 排序后的数据
+                        data = [header] + data_rows
+                    
+                    self.logger.write(f"[GUI DEBUG] Extracted {len(data)} rows of table data", 'debug')
 
-                if cmd == "--list":
-                    text = text.replace("Virtual Ip", "VIRTUAL_IP")
-                    text = text.replace("Name", "NAME")
-                    text = text.replace("Status", "STATUS")
-                    text = text.replace("P2P/Relay", "P2P/RELAY")
-                    text = text.replace("Rt", "RT")
-
-                if cmd == "--route":
-                    text = text.replace("Next Hop", "NEXT_HOP")
-                    text = text.replace("Destination", "DESTINATION")
-                    text = text.replace("Metric", "METRIC")
-                    text = text.replace("Rt", "RT")
-                    text = text.replace("Interface", "INTERFACE")
-
-                # 按行分割文本
-                lines = text.strip().split("\n")
-
-                # 按空格分割每行，获取数据
-                # 使用 str.split() 默认行为，忽略多个连续空格
-                data = [line.split() for line in lines]
+                # 计算数据的哈希值，用于检测是否变化
+                data_str = str(data)
+                current_hash = hashlib.md5(data_str.encode('utf-8')).hexdigest()
+                
+                # 如果数据没有变化，跳过更新（减少刷屏）
+                if hasattr(self, 'last_data_hash') and cmd in self.last_data_hash and self.last_data_hash[cmd] == current_hash:
+                    time.sleep(2)  # 数据未变化，延长刷新间隔到 2 秒
+                    continue
+                
+                # 数据已变化，更新哈希值
+                if not hasattr(self, 'last_data_hash'):
+                    self.last_data_hash = {}
+                self.last_data_hash[cmd] = current_hash
 
                 # 根据数据调整 Grid 的大小
                 row_count = len(data)
                 col_count = max(len(row) for row in data) if data else 0
 
                 if (last_col_count != col_count or last_row_count != row_count) and row_count != 0 and col_count != 0:
+                    self.logger.write(f"[GUI DEBUG] Redrawing grid: {row_count} rows, {col_count} cols", 'debug')
                     wx.CallAfter(self._redraw_grid, row_count, col_count, cmd)
 
                 last_row_count = row_count
                 last_col_count = col_count
 
                 # 将数据写入 Grid
-                if len(data) > 1 and text != "":
+                if len(data) > 0:
                     for row, row_data in enumerate(data):
                         for col, value in enumerate(row_data):
-                            wx.CallAfter(self._write_grid, row, col, value)
+                            if col < self.m_grid3.GetNumberCols():  # 确保不超出列范围
+                                wx.CallAfter(self._write_grid, row, col, value)
+                    
+                    self.logger.write(f"[GUI DEBUG] Wrote {len(data)} rows to grid", 'debug')
 
-                text = ""
+            except subprocess.TimeoutExpired:
+                self.logger.write(f"[GUI DEBUG] Command timed out", 'error')
+                if p.poll() is None:
+                    p.kill()
+            except Exception as e:
+                self.logger.write(f"[GUI DEBUG] Failed to execute vnt2_ctrl.exe: {e}", 'critical')
+            
+            # 正常刷新间隔：1.5 秒（平衡实时性和可读性）
+            time.sleep(1.5)
 
-            time.sleep(0.5)
+        self.logger.write(f"Info Daemon {cmd} Exit ...")
 
 
 class VNT_TaskBar_Icon(wx.adv.TaskBarIcon):
