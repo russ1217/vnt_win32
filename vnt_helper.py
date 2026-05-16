@@ -1526,8 +1526,8 @@ class VNT_Main_Window(wx.Frame):
         self.m_staticText10 = wx.StaticText(panel, wx.ID_ANY, _("Protocol"), style=wx.ALIGN_LEFT)
         self.m_staticText10.Wrap(-1)
         col4.Add(self.m_staticText10, 0, wx.TOP, scale(5))
-        # VNT2 协议选项：quic, tcp, ws, wss
-        ProtocolChoices = [_("QUIC"), _("TCP"), _("WS"), _("WSS")]
+        # VNT2 协议选项（严格按照文档）：quic, tcp, wss, dynamic
+        ProtocolChoices = [_("QUIC"), _("TCP"), _("WSS"), _("DYNAMIC")]
         self.Protocol = wx.Choice(panel, choices=ProtocolChoices)
         self.Protocol.SetSelection(0)
         col4.Add(self.Protocol, 1, wx.TOP | wx.BOTTOM | wx.EXPAND, scale(5))
@@ -1876,12 +1876,19 @@ class VNT_Main_Window(wx.Frame):
         event.Skip()
 
     def on_protocol_change(self, event):
-        if self.Protocol.GetStringSelection() in ["WSS"]:
+        selected_protocol = self.Protocol.GetStringSelection()
+        if selected_protocol == "WSS":
             self.help_msg.SetForegroundColour("RED")
             self.help_msg.Label = _("WSS protocol requires server to use reverse proxy with valid SSL certificate")
+        elif selected_protocol == "DYNAMIC":
+            self.help_msg.SetForegroundColour("BLACK")
+            self.help_msg.Label = _("DYNAMIC protocol uses DNS TXT record for server address resolution")
+        elif selected_protocol == "QUIC":
+            self.help_msg.SetForegroundColour("BLACK")
+            self.help_msg.Label = _("QUIC protocol selected (optimized UDP transport)")
         else:
             self.help_msg.SetForegroundColour("BLACK")
-            self.help_msg.Label = _("%s protocol selected") % self.Protocol.GetStringSelection()
+            self.help_msg.Label = _("%s protocol selected") % selected_protocol
         self.Refresh()
         event.Skip()
 
@@ -2065,13 +2072,13 @@ class VNT_Main_Window(wx.Frame):
             # 现有配置文件，完全重建为 VNT2 格式（清除所有旧字段）
             data = {}
 
-        # VNT2 协议映射：UI选择 -> YAML存储格式
-        # UI显示: QUIC, TCP, WS, WSS -> YAML存储: quic://, tcp://, ws://, wss://
+        # VNT2 协议映射：UI选择 -> YAML存储格式（严格按照文档）
+        # UI显示: QUIC, TCP, WSS, DYNAMIC -> YAML存储: quic://, tcp://, wss://, dynamic://
         protocol_mapping = {
             'quic': 'quic://',
             'tcp': 'tcp://',
-            'ws': 'ws://',
-            'wss': 'wss://'
+            'wss': 'wss://',
+            'dynamic': 'dynamic://'
         }
         
         selected_protocol = self.Protocol.GetString(self.Protocol.GetSelection()).lower()
@@ -2167,13 +2174,13 @@ class VNT_Main_Window(wx.Frame):
                 service_address_port = server_address.split("://")[1].strip()
                 protocol_prefix = server_address.split("://")[0].strip().lower()
                 
-                # VNT2 协议映射回 UI 显示
-                # YAML存储: quic, tcp, ws, wss -> UI显示: QUIC, TCP, WS, WSS
+                # VNT2 协议映射回 UI 显示（严格按照文档）
+                # YAML存储: quic, tcp, wss, dynamic -> UI显示: QUIC, TCP, WSS, DYNAMIC
                 protocol_mapping = {
                     'quic': 'QUIC',
                     'tcp': 'TCP',
-                    'ws': 'WS',
-                    'wss': 'WSS'
+                    'wss': 'WSS',
+                    'dynamic': 'DYNAMIC'
                 }
                 ui_protocol = protocol_mapping.get(protocol_prefix, 'QUIC')
                 
