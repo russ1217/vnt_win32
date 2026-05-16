@@ -1526,11 +1526,13 @@ class VNT_Main_Window(wx.Frame):
         self.m_staticText10 = wx.StaticText(panel, wx.ID_ANY, _("Protocol"), style=wx.ALIGN_LEFT)
         self.m_staticText10.Wrap(-1)
         col4.Add(self.m_staticText10, 0, wx.TOP, scale(5))
-        ProtocolChoices = [_("UDP"), _("TCP"), _("WS"), _("WSS")]
+        # VNT2 协议选项：quic, tcp, ws, wss
+        ProtocolChoices = [_("QUIC"), _("TCP"), _("WS"), _("WSS")]
         self.Protocol = wx.Choice(panel, choices=ProtocolChoices)
         self.Protocol.SetSelection(0)
         col4.Add(self.Protocol, 1, wx.TOP | wx.BOTTOM | wx.EXPAND, scale(5))
         hSizer_row2.Add(col4, 1, wx.EXPAND | wx.RIGHT, HORIZONTAL_GAP)
+
 
         col5 = wx.BoxSizer(wx.VERTICAL)
         self.m_staticText11 = wx.StaticText(panel, wx.ID_ANY, _("Compression"), style=wx.ALIGN_LEFT)
@@ -2064,8 +2066,9 @@ class VNT_Main_Window(wx.Frame):
             data = {}
 
         # VNT2 协议映射：UI选择 -> YAML存储格式
+        # UI显示: QUIC, TCP, WS, WSS -> YAML存储: quic://, tcp://, ws://, wss://
         protocol_mapping = {
-            'udp': 'quic://',
+            'quic': 'quic://',
             'tcp': 'tcp://',
             'ws': 'ws://',
             'wss': 'wss://'
@@ -2165,13 +2168,14 @@ class VNT_Main_Window(wx.Frame):
                 protocol_prefix = server_address.split("://")[0].strip().lower()
                 
                 # VNT2 协议映射回 UI 显示
+                # YAML存储: quic, tcp, ws, wss -> UI显示: QUIC, TCP, WS, WSS
                 protocol_mapping = {
-                    'quic': 'UDP',
+                    'quic': 'QUIC',
                     'tcp': 'TCP',
                     'ws': 'WS',
                     'wss': 'WSS'
                 }
-                ui_protocol = protocol_mapping.get(protocol_prefix, 'UDP')
+                ui_protocol = protocol_mapping.get(protocol_prefix, 'QUIC')
                 
                 index = self.Protocol.FindString(ui_protocol)
                 if index == -1:
