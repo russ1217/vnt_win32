@@ -1489,6 +1489,36 @@ class VNT_Main_Window(wx.Frame):
 
         bSizer1.AddSpacer(scale(15))
 
+        # === Server Address List / Compression (2 columns aligned with row above) ===
+        hSizer_row2 = wx.BoxSizer(wx.HORIZONTAL)
+
+        col4 = wx.BoxSizer(wx.VERTICAL)
+        self.m_staticText10 = wx.StaticText(panel, wx.ID_ANY, _("Protocol"), style=wx.ALIGN_LEFT)
+        self.m_staticText10.Wrap(-1)
+        col4.Add(self.m_staticText10, 0, wx.TOP, scale(5))
+        # VNT2 协议选项（严格按照文档）：quic, tcp, wss, dynamic
+        ProtocolChoices = [_("QUIC"), _("TCP"), _("WSS"), _("DYNAMIC")]
+        self.Protocol = wx.Choice(panel, choices=ProtocolChoices)
+        self.Protocol.SetSelection(0)
+        col4.Add(self.Protocol, 1, wx.TOP | wx.BOTTOM | wx.EXPAND, scale(5))
+        hSizer_row2.Add(col4, 1, wx.EXPAND | wx.RIGHT, HORIZONTAL_GAP)
+
+
+        col5 = wx.BoxSizer(wx.VERTICAL)
+        self.m_staticText11 = wx.StaticText(panel, wx.ID_ANY, _("Compression"), style=wx.ALIGN_LEFT)
+        self.m_staticText11.Wrap(-1)
+        col5.Add(self.m_staticText11, 0, wx.TOP, scale(5))
+        CompressionChoices = [_("none"), _("lz4"), _("zstd")]
+        self.Compression = wx.Choice(panel, choices=CompressionChoices)
+        self.Compression.SetSelection(0)
+        col5.Add(self.Compression, 1, wx.TOP | wx.BOTTOM | wx.EXPAND, scale(5))
+        hSizer_row2.Add(col5, 1, wx.EXPAND)
+
+        bSizer1.AddSpacer(scale(15))
+        bSizer1.Add(hSizer_row2, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, LEFT_MARGIN)
+
+        bSizer1.AddSpacer(scale(15))
+
         # === Virtual IP / Server IP:Port / Network Password ===
         hSizer_row1 = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -1520,45 +1550,6 @@ class VNT_Main_Window(wx.Frame):
 
         bSizer1.AddSpacer(scale(15))
 
-        # === Protocol / Compression / E2E Security ===
-        hSizer_row2 = wx.BoxSizer(wx.HORIZONTAL)
-
-        col4 = wx.BoxSizer(wx.VERTICAL)
-        self.m_staticText10 = wx.StaticText(panel, wx.ID_ANY, _("Protocol"), style=wx.ALIGN_LEFT)
-        self.m_staticText10.Wrap(-1)
-        col4.Add(self.m_staticText10, 0, wx.TOP, scale(5))
-        # VNT2 协议选项（严格按照文档）：quic, tcp, wss, dynamic
-        ProtocolChoices = [_("QUIC"), _("TCP"), _("WSS"), _("DYNAMIC")]
-        self.Protocol = wx.Choice(panel, choices=ProtocolChoices)
-        self.Protocol.SetSelection(0)
-        col4.Add(self.Protocol, 1, wx.TOP | wx.BOTTOM | wx.EXPAND, scale(5))
-        hSizer_row2.Add(col4, 1, wx.EXPAND | wx.RIGHT, HORIZONTAL_GAP)
-
-
-        col5 = wx.BoxSizer(wx.VERTICAL)
-        self.m_staticText11 = wx.StaticText(panel, wx.ID_ANY, _("Compression"), style=wx.ALIGN_LEFT)
-        self.m_staticText11.Wrap(-1)
-        col5.Add(self.m_staticText11, 0, wx.TOP, scale(5))
-        CompressionChoices = [_("none"), _("lz4"), _("zstd")]
-        self.Compression = wx.Choice(panel, choices=CompressionChoices)
-        self.Compression.SetSelection(0)
-        col5.Add(self.Compression, 1, wx.TOP | wx.BOTTOM | wx.EXPAND, scale(5))
-        hSizer_row2.Add(col5, 1, wx.EXPAND | wx.RIGHT, HORIZONTAL_GAP)
-
-        col6 = wx.BoxSizer(wx.VERTICAL)
-        self.m_staticText13 = wx.StaticText(panel, wx.ID_ANY, _("E2E Security"), style=wx.ALIGN_LEFT)
-        self.m_staticText13.Wrap(-1)
-        col6.Add(self.m_staticText13, 0, wx.TOP, scale(5))
-        ClientEncryptionChoices = [_("aes_gcm"), _("chacha20_poly1305"), _("chacha20"), _("aes_cbc"), _("aes_ecb"), _("sm4_cbc"), _("xor")]
-        self.ClientEncryption = wx.Choice(panel, choices=ClientEncryptionChoices, size=(scale(120), -1))
-        self.ClientEncryption.SetSelection(0)
-        col6.Add(self.ClientEncryption, 1, wx.TOP | wx.BOTTOM | wx.EXPAND, scale(5))
-        hSizer_row2.Add(col6, 1, wx.EXPAND)
-
-        bSizer1.AddSpacer(scale(15))
-        bSizer1.Add(hSizer_row2, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, LEFT_MARGIN)
-        bSizer1.AddSpacer(scale(15))
-
         # === Focus handlers for labels ===
         def make_focus_handler(static_text, is_focus):
             def handler(event):
@@ -1574,8 +1565,6 @@ class VNT_Main_Window(wx.Frame):
         self.Protocol.Bind(wx.EVT_KILL_FOCUS, make_focus_handler(self.m_staticText10, False))
         self.Compression.Bind(wx.EVT_SET_FOCUS, make_focus_handler(self.m_staticText11, True))
         self.Compression.Bind(wx.EVT_KILL_FOCUS, make_focus_handler(self.m_staticText11, False))
-        self.ClientEncryption.Bind(wx.EVT_SET_FOCUS, make_focus_handler(self.m_staticText13, True))
-        self.ClientEncryption.Bind(wx.EVT_KILL_FOCUS, make_focus_handler(self.m_staticText13, False))
 
         # === Checkboxes ===
         class FocusableCheckBox(wx.CheckBox):
@@ -1698,7 +1687,6 @@ class VNT_Main_Window(wx.Frame):
         self.Network_Password.Bind(wx.EVT_TEXT, self.on_text_password)
 
         self.Compression.Bind(wx.EVT_CHOICE, self.on_compression_change)
-        self.ClientEncryption.Bind(wx.EVT_CHOICE, self.on_client_encryption_change)
         self.Protocol.Bind(wx.EVT_CHOICE, self.on_protocol_change)
 
         self.auto_start.Bind(wx.EVT_CHECKBOX, self.on_auto_start_changed)
@@ -1715,14 +1703,13 @@ class VNT_Main_Window(wx.Frame):
         self.m_select_button.MoveAfterInTabOrder(self.ConfigName)
         self.Token.MoveAfterInTabOrder(self.m_select_button)
         self.DeviceID.MoveAfterInTabOrder(self.Token)
-        self.VirtualIP.MoveAfterInTabOrder(self.DeviceID)
+        self.Protocol.MoveAfterInTabOrder(self.DeviceID)
+        self.Compression.MoveAfterInTabOrder(self.Protocol)
+        self.VirtualIP.MoveAfterInTabOrder(self.Compression)
         self.ServerIPPort.MoveAfterInTabOrder(self.VirtualIP)
         self.Network_Password.MoveAfterInTabOrder(self.ServerIPPort)
-        self.Protocol.MoveAfterInTabOrder(self.Network_Password)
-        self.Compression.MoveAfterInTabOrder(self.Protocol)
-        self.ClientEncryption.MoveAfterInTabOrder(self.Compression)
-        self.auto_start.MoveAfterInTabOrder(self.ClientEncryption)
-        self.Notification.MoveAfterInTabOrder(self.auto_start)
+        self.auto_start.MoveAfterInTabOrder(self.Network_Password)
+
         self.Advanced.MoveAfterInTabOrder(self.Notification)
         self.m_sdbSizer1OK.MoveAfterInTabOrder(self.Advanced)
         self.m_sdbSizer1Cancel.MoveAfterInTabOrder(self.m_sdbSizer1OK)
@@ -1752,13 +1739,11 @@ class VNT_Main_Window(wx.Frame):
         self.m_staticText15.SetLabel(_("Network Password"))
         self.m_staticText10.SetLabel(_("Protocol"))
         self.m_staticText11.SetLabel(_("Compression"))
-        self.m_staticText13.SetLabel(_("E2E Security"))
         self.m_staticText12.SetLabel(_("More Options"))
 
         # Refresh choice options (must reassign to update display)
-        self.Protocol.SetItems([_("UDP"), _("TCP"), _("WS"), _("WSS")])
+        self.Protocol.SetItems([_("QUIC"), _("TCP"), _("WSS"), _("DYNAMIC")])
         self.Compression.SetItems([_("none"), _("lz4"), _("zstd")])
-        self.ClientEncryption.SetItems([_("aes_gcm"), _("chacha20_poly1305"), _("chacha20"), _("aes_cbc"), _("aes_ecb"), _("sm4_cbc"), _("xor")])
 
         self.auto_start.SetLabel(_("Auto Start"))
         self.Notification.SetLabel(_("Show Notification"))
@@ -1868,6 +1853,12 @@ class VNT_Main_Window(wx.Frame):
         self.Refresh()
         event.Skip()
 
+    def on_compression_change(self, event):
+        self.help_msg.SetForegroundColour("BLACK")
+        self.help_msg.Label = _("LZ4 is recommended. ZSTD needs compile with --features zstd")
+        self.Refresh()
+        event.Skip()
+
     def on_protocol_change(self, event):
         selected_protocol = self.Protocol.GetStringSelection()
         if selected_protocol == "WSS":
@@ -1935,6 +1926,21 @@ class VNT_Main_Window(wx.Frame):
             return
 
         vnt_conf.set_value(VNT_Config.KEY_VNT_NOTIFICATION_ENABLED, self.Notification.GetValue())
+
+    def on_button_cancel(self, event):
+        self.Hide()
+        vnt_conf = VNT_Config(self.workingdir, self.config_fn, self.logger)
+        previous_conf = vnt_conf.get_value(VNT_Config.KEY_VNT_PREV_PROFILE)
+        if previous_conf is not None and previous_conf != '':
+            vnt_conf.set_value(VNT_Config.KEY_VNT_CONNECTION_CONFIG_YAML, previous_conf)
+            vnt_conf.set_value(VNT_Config.KEY_VNT_PREV_PROFILE, '')
+            dlg = VNT_ManageProfile_Frame(self.vnt_app.main_window, self.vnt_app)
+            if dlg.ShowModal() == wx.ID_OK:
+                selected = dlg.get_selected_items()
+                print("Selected profiles:", selected)
+            dlg.Destroy()
+
+        event.Skip()
 
     def on_button_select(self, event):
         self.Hide()
@@ -2101,10 +2107,6 @@ class VNT_Main_Window(wx.Frame):
         compression_method = self.Compression.GetString(self.Compression.GetSelection()).lower()
         data['compress'] = (compression_method == 'lz4')
 
-        # 端到端加密模型
-        e2e_cipher_model = self.ClientEncryption.GetString(self.ClientEncryption.GetSelection()).lower()
-        data['cipher_model'] = e2e_cipher_model
-
         # VNT2 安全配置：cert_mode 由编辑器管理，这里不设置默认值
         # 如果 YAML 文件中不存在 cert_mode，vnt_daemon 转换时会使用默认值
 
@@ -2131,7 +2133,6 @@ class VNT_Main_Window(wx.Frame):
             self.Network_Password.SetValue('')
             self.Protocol.SetSelection(0)
             self.Compression.SetSelection(0)
-            self.ClientEncryption.SetSelection(0)
             self.auto_start.SetValue(True)
             self.Notification.SetValue(True)
             self.Advanced.Enabled = False
@@ -2220,17 +2221,6 @@ class VNT_Main_Window(wx.Frame):
         except Exception:
             index = 0
         self.Compression.SetSelection(index)
-
-        try:
-            e2e_cipher_model = data["cipher_model"]
-        except Exception:
-            index = 0
-
-        if e2e_cipher_model is not None:
-            index = self.ClientEncryption.FindString(e2e_cipher_model)
-            if index == -1:
-                index = 0
-        self.ClientEncryption.SetSelection(index)
 
     def _is_valid_virtual_IP(self, event):
         if Internet_Connectivity_Monitor.is_valid_IP(self.VirtualIP.GetValue()):
@@ -4482,6 +4472,9 @@ class VNT_Log_Window(wx.Frame):
     def on_close(self, event):
         self.Hide()
 
+    def on_button_cancel(self, event):
+        self.Hide()
+
     def on_key_down(self, event):
         if event.GetKeyCode() == wx.WXK_DELETE:
             self.delete_selected_items()
@@ -4818,8 +4811,6 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
             'cert_mode',
             # STUN配置
             'udp_stun', 'tcp_stun',
-            # 加密相关
-            'cipher_model'
         }
 
         
@@ -4832,16 +4823,22 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
             'password',          # Network_Password
             'ip',                # VirtualIP
             'compress',          # Compression
-            'cipher_model',      # ClientEncryption
             'cert_mode',         # 证书验证模式（高级编辑器管理）
         }
 
         if isinstance(data, dict):
             # 如果是根节点（key_path为空），确保所有重要字段都显示
             if len(key_path) == 0 and parent_item == self.root:
-                # 先显示已存在的字段
+                # VNT1 遗留字段列表（需要过滤掉）
+                vnt1_legacy_keys = {'token', 'server_address', 'name', 'cipher_model', 'server_encrypt', 'compressor'}
+                
+                # 先显示已存在的字段（过滤掉VNT1遗留字段）
                 existing_keys = set()
                 for key, value in data.items():
+                    # 跳过VNT1遗留字段
+                    if key in vnt1_legacy_keys:
+                        continue
+                    
                     existing_keys.add(key)
                     new_key_path = key_path + (key,)
                     is_main_ui = key in main_ui_keys
@@ -4852,6 +4849,7 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
                         item = self.tree.AppendItem(parent_item, f"{key}: {display_val}")
                         if is_main_ui:
                             self.tree.SetItemTextColour(item, wx.RED)
+
                     else:
                         display_val = self.preview_value(value)
                         item = self.tree.AppendItem(parent_item, f"{key}: {display_val}")
@@ -4919,7 +4917,6 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
             'ip': '',
             'tun_name': 'vnt-tun',
             'cert_mode': 'skip',
-            'cipher_model': 'aes_gcm',
             # 布尔类型
             'compress': False,
             'rtx': False,
@@ -5134,8 +5131,14 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
 
     def save_yaml(self, path):
         try:
+            # VNT1 遗留字段列表（保存前需要清除）
+            vnt1_legacy_keys = {'token', 'server_address', 'name', 'cipher_model', 'server_encrypt', 'compressor'}
+            
+            # 创建数据副本并清除VNT1遗留字段
+            clean_data = {k: v for k, v in self.original_data.items() if k not in vnt1_legacy_keys}
+            
             with open(path, 'w', encoding='utf-8') as f:
-                yaml.dump(self.original_data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+                yaml.dump(clean_data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
             win32api.MessageBox(None, _("Saved successfully!"), _("Info"), win32con.MB_OK | win32con.MB_ICONINFORMATION | win32con.MB_SYSTEMMODAL)
         except Exception as e:
             win32api.MessageBox(None, _("Failed to save:\n{e}").format(e=e), _("Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
@@ -5322,7 +5325,9 @@ class VNT_ManageProfile_Frame(wx.Dialog):
         return
 
     def on_import(self, event):
-        important_keys = {'token', 'device_id', 'name', 'server_address', 'password', 'ip', 'server_encrypt', 'cipher_model', 'compressor'}
+        # VNT2 配置验证字段（基于 vnt2_conf_toml_example.toml）
+        important_keys = {'network_code', 'server', 'device_id', 'device_name', 'password', 'ip', 'compress'}
+
 
         def extract_all_keys(data: Union[Dict, List]) -> Set[str]:
             """递归提取数据中所有字典的键名（去重）"""
