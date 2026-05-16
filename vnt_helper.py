@@ -2055,10 +2055,12 @@ class VNT_Main_Window(wx.Frame):
         if fn is None:
             return False
         elif not os.path.exists(fn):
+            # 新配置文件，从模板加载
             data = VNT_Config(self.workingdir, VNT_CONFIG_TEMPLATE_FILE, self.logger).get_data()
             if data is None:
                 data = {}
         else:
+            # 现有配置文件，完全重建为 VNT2 格式（清除所有旧字段）
             data = {}
 
         # VNT2 协议映射：UI选择 -> YAML存储格式
@@ -2072,38 +2074,37 @@ class VNT_Main_Window(wx.Frame):
         selected_protocol = self.Protocol.GetString(self.Protocol.GetSelection()).lower()
         server_prefix = protocol_mapping.get(selected_protocol, 'quic://')
 
-        # 直接使用 VNT2 字段名写入 YAML
-        data_main = {
-            'network_code': self.Token.GetValue(),
-            'device_id': self.DeviceID.GetValue(),
-            'device_name': self.DeviceID.GetValue(),
-            'server': server_prefix + self.ServerIPPort.GetValue(),
-            'password': self.Network_Password.GetValue(),
-        }
+        # VNT2 核心字段（覆盖所有旧字段）
+        data['network_code'] = self.Token.GetValue()
+        data['device_id'] = self.DeviceID.GetValue()
+        data['device_name'] = self.DeviceID.GetValue()
+        data['server'] = server_prefix + self.ServerIPPort.GetValue()
+        data['password'] = self.Network_Password.GetValue()
 
-        data.update(data_main)
-
+        # IP 地址（可选）
         ip_txt = self.VirtualIP.GetValue()
-
         if ip_txt is not None and ip_txt != "" and Internet_Connectivity_Monitor.is_valid_IP(ip_txt):
-            data.update({'ip': ip_txt})
+            data['ip'] = ip_txt
         else:
             self.vnt_app.bubble_msg_handler.msg(_("Error#Invalid IP %s, Server assigns IP") % ip_txt)
 
         # VNT2 compress 字段为布尔值
         compression_method = self.Compression.GetString(self.Compression.GetSelection()).lower()
-        data.update({'compress': (compression_method == 'lz4')})
+        data['compress'] = (compression_method == 'lz4')
 
-        if self.Encrypted_Server_Connection.GetValue() is True:
-            data.update({'server_encrypt': True})
-        else:
-            data.update({'server_encrypt': False})
+        # 服务器加密
+        data['server_encrypt'] = self.Encrypted_Server_Connection.GetValue()
 
+        # 端到端加密模型
         e2e_cipher_model = self.ClientEncryption.GetString(self.ClientEncryption.GetSelection()).lower()
-        data.update({'cipher_model': e2e_cipher_model})
+        data['cipher_model'] = e2e_cipher_model
+
+        # VNT2 安全配置：自签名证书使用 skip 模式
+        data['cert_mode'] = 'skip'
 
         connction_conf = VNT_Config(self.workingdir, os.path.basename(fn), self.logger)
         self.logger.write(f"Connection file to write {fn}")
+        self.logger.write(f"VNT2 config data keys: {list(data.keys())}")
         return connction_conf.set_data(data)
 
     def _load_settings_to_main_window(self):
@@ -2148,13 +2149,17 @@ class VNT_Main_Window(wx.Frame):
             return
 
         try:
-            # VNT2 字段：network_code, device_id, device_name, server, password
-            self.Token.SetValue(data.get('network_code', ''))
+            # VNT2 字段：network_code（优先）或 token（向后兼容）
+            network_code = data.get('network_code') or data.get('token', '')
+            self.Token.SetValue(network_code)
+            
             self.DeviceID.SetValue(data.get('device_id', ''))
             self.Network_Password.SetValue(data.get('password', ''))
             
             # VNT2 server 格式带协议前缀：quic://, tcp://, ws://, wss://
-            server_address = data.get('server', '')
+            # 向后兼容：如果没有 server 字段，尝试从 server_address 读取
+            server_address = data.get('server') or data.get('server_address', '')
+            
             if '://' in server_address:
                 service_address_port = server_address.split("://")[1].strip()
                 protocol_prefix = server_address.split("://")[0].strip().lower()
