@@ -117,6 +117,7 @@ class VNTDaemon():
     def _convert_yaml_to_toml(self, yaml_path):
         """将YAML配置文件转换为TOML格式，返回TOML文件路径
         YAML已经使用VNT2字段格式，此处仅做格式转换（YAML→TOML）
+        注意：VNT2 CLI 要求 server 字段为数组格式
         """
         try:
             self.logger.write(f"Starting YAML to TOML conversion: {yaml_path}", "info")
@@ -144,6 +145,15 @@ class VNTDaemon():
             
             if 'server' not in yaml_data:
                 self.logger.write("Error: server is missing in YAML config", "critical")
+                return None
+            
+            # VNT2 CLI 要求 server 字段为数组格式
+            # 如果 server 是字符串，转换为单元素数组
+            if isinstance(yaml_data['server'], str):
+                yaml_data['server'] = [yaml_data['server']]
+                self.logger.write(f"Converted server to array: {yaml_data['server']}", "info")
+            elif not isinstance(yaml_data['server'], list):
+                self.logger.write(f"Error: server has invalid type: {type(yaml_data['server'])}", "critical")
                 return None
             
             # 生成TOML文件路径（与YAML同目录，扩展名改为.toml）
