@@ -2166,11 +2166,17 @@ class VNT_Main_Window(wx.Frame):
             self.DeviceID.SetValue(data.get('device_id', ''))
             self.Network_Password.SetValue(data.get('password', ''))
             
-            # VNT2 server 格式带协议前缀：quic://, tcp://, ws://, wss://
+            # VNT2 server 格式可能是字符串或数组（TOML要求数组，YAML可以是字符串）
             # 向后兼容：如果没有 server 字段，尝试从 server_address 读取
-            server_address = data.get('server') or data.get('server_address', '')
+            server_data = data.get('server') or data.get('server_address', '')
             
-            if '://' in server_address:
+            # 如果 server 是数组，取第一个元素
+            if isinstance(server_data, list):
+                server_address = server_data[0] if len(server_data) > 0 else ''
+            else:
+                server_address = server_data
+            
+            if isinstance(server_address, str) and '://' in server_address:
                 service_address_port = server_address.split("://")[1].strip()
                 protocol_prefix = server_address.split("://")[0].strip().lower()
                 
@@ -2190,8 +2196,13 @@ class VNT_Main_Window(wx.Frame):
                 self.Protocol.SetSelection(index)
                 
                 self.ServerIPPort.SetValue(service_address_port)
-            else:
+            elif isinstance(server_address, str):
+                # 没有协议前缀的情况
                 self.ServerIPPort.SetValue(server_address)
+                self.Protocol.SetSelection(0)
+            else:
+                # server_address 不是字符串的异常情况
+                self.ServerIPPort.SetValue('')
                 self.Protocol.SetSelection(0)
             
             self.VirtualIP.SetValue(data.get('ip', ''))
