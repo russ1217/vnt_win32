@@ -2061,22 +2061,27 @@ class VNT_Main_Window(wx.Frame):
         else:
             data = {}
 
-        protocol_prefix = self.Protocol.GetString(self.Protocol.GetSelection()).lower() + "://"
+        # VNT2 协议映射：UI选择 -> YAML存储格式
+        protocol_mapping = {
+            'udp': 'quic://',
+            'tcp': 'tcp://',
+            'ws': 'ws://',
+            'wss': 'wss://'
+        }
+        
+        selected_protocol = self.Protocol.GetString(self.Protocol.GetSelection()).lower()
+        server_prefix = protocol_mapping.get(selected_protocol, 'quic://')
 
+        # 直接使用 VNT2 字段名写入 YAML
         data_main = {
-            'token': self.Token.GetValue(),
+            'network_code': self.Token.GetValue(),
             'device_id': self.DeviceID.GetValue(),
-            'name': self.DeviceID.GetValue(),
-            'server_address': protocol_prefix + self.ServerIPPort.GetValue(),
+            'device_name': self.DeviceID.GetValue(),
+            'server': server_prefix + self.ServerIPPort.GetValue(),
             'password': self.Network_Password.GetValue(),
         }
 
         data.update(data_main)
-
-        if self.Protocol.GetString(self.Protocol.GetSelection()).lower() != "udp":
-            data.update({'tcp': True})
-        else:
-            data.update({'tcp': False})
 
         ip_txt = self.VirtualIP.GetValue()
 
@@ -2085,8 +2090,9 @@ class VNT_Main_Window(wx.Frame):
         else:
             self.vnt_app.bubble_msg_handler.msg(_("Error#Invalid IP %s, Server assigns IP") % ip_txt)
 
+        # VNT2 compress 字段为布尔值
         compression_method = self.Compression.GetString(self.Compression.GetSelection()).lower()
-        data.update({'compressor': compression_method})
+        data.update({'compress': (compression_method == 'lz4')})
 
         if self.Encrypted_Server_Connection.GetValue() is True:
             data.update({'server_encrypt': True})
@@ -2142,24 +2148,37 @@ class VNT_Main_Window(wx.Frame):
             return
 
         try:
-            self.Token.SetValue(data['token'])
-            self.DeviceID.SetValue(data['device_id'])
-            self.Network_Password.SetValue(data['password'])
-            service_address_port = data['server_address'].split("://")[1].strip()
-            self.ServerIPPort.SetValue(service_address_port)
-            protocol_prefix = data['server_address'].split("://")[0].strip().upper()
-            is_tcp = data['tcp']
-            if (is_tcp and protocol_prefix == 'UDP') or ((not is_tcp) and protocol_prefix != 'UDP'):
-                print(f"Protocol settings mismatch, use setting prefix at {data['server_address']}")
-                print("This is probably a manual edit yaml error.")
-
-            index = self.Protocol.FindString(protocol_prefix)
-
-            if index == -1:
-                index = 0
-
-            self.Protocol.SetSelection(index)
-            self.VirtualIP.SetValue(data['ip'])
+            # VNT2 字段：network_code, device_id, device_name, server, password
+            self.Token.SetValue(data.get('network_code', ''))
+            self.DeviceID.SetValue(data.get('device_id', ''))
+            self.Network_Password.SetValue(data.get('password', ''))
+            
+            # VNT2 server 格式带协议前缀：quic://, tcp://, ws://, wss://
+            server_address = data.get('server', '')
+            if '://' in server_address:
+                service_address_port = server_address.split("://")[1].strip()
+                protocol_prefix = server_address.split("://")[0].strip().lower()
+                
+                # VNT2 协议映射回 UI 显示
+                protocol_mapping = {
+                    'quic': 'UDP',
+                    'tcp': 'TCP',
+                    'ws': 'WS',
+                    'wss': 'WSS'
+                }
+                ui_protocol = protocol_mapping.get(protocol_prefix, 'UDP')
+                
+                index = self.Protocol.FindString(ui_protocol)
+                if index == -1:
+                    index = 0
+                self.Protocol.SetSelection(index)
+                
+                self.ServerIPPort.SetValue(service_address_port)
+            else:
+                self.ServerIPPort.SetValue(server_address)
+                self.Protocol.SetSelection(0)
+            
+            self.VirtualIP.SetValue(data.get('ip', ''))
         except Exception as e:
             self.logger.write(f"Reading yaml: {e}", 'critical')
 
@@ -2169,15 +2188,14 @@ class VNT_Main_Window(wx.Frame):
                 win32api.MessageBox(0, _("Error %s loading connection profile! Consider RESET") % str(e), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
 
         try:
-            compression_method = data["compressor"]
-        except Exception:
-            compression_method = None
-            index = 0
-
-        if compression_method is not None:
+            # VNT2 compress 是布尔值，转换为 UI 显示
+            compress_enabled = data.get("compress", False)
+            compression_method = "lz4" if compress_enabled else "none"
             index = self.Compression.FindString(compression_method)
             if index == -1:
                 index = 0
+        except Exception:
+            index = 0
         self.Compression.SetSelection(index)
 
         try:

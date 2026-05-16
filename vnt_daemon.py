@@ -115,7 +115,9 @@ class VNTDaemon():
         return curpath
 
     def _convert_yaml_to_toml(self, yaml_path):
-        """将YAML配置文件转换为TOML格式，返回TOML文件路径"""
+        """将YAML配置文件转换为TOML格式，返回TOML文件路径
+        YAML已经使用VNT2字段格式，此处仅做格式转换（YAML→TOML）
+        """
         try:
             self.logger.write(f"Starting YAML to TOML conversion: {yaml_path}", "info")
             
@@ -134,120 +136,25 @@ class VNTDaemon():
             
             self.logger.write(f"YAML data loaded successfully, keys: {list(yaml_data.keys())}", "info")
             
-            # 协议映射：UDP -> quic, TCP -> tcp, WS -> ws, WSS -> wss
-            server_address = yaml_data.get('server_address', '')
-            if server_address:
-                protocol_prefix = server_address.split('://')[0].lower() if '://' in server_address else ''
-                address_part = server_address.split('://')[1] if '://' in server_address else server_address
-                
-                self.logger.write(f"Original protocol: {protocol_prefix}, address: {address_part}", "info")
-                
-                # 根据VNT2规范进行协议映射
-                protocol_mapping = {
-                    'udp': 'quic',
-                    'tcp': 'tcp',
-                    'ws': 'ws',
-                    'wss': 'wss'
-                }
-                
-                mapped_protocol = protocol_mapping.get(protocol_prefix, 'quic')
-                yaml_data['server_address'] = f"{mapped_protocol}://{address_part}"
-                
-                self.logger.write(f"Mapped protocol: {mapped_protocol}, full address: {yaml_data['server_address']}", "info")
-            else:
-                self.logger.write("Warning: server_address not found in YAML config", "warning")
-            
-            # 转换token为network_code (VNT2使用network_code)
-            if 'token' in yaml_data:
-                yaml_data['network_code'] = yaml_data.pop('token')
-                self.logger.write("Converted token to network_code", "info")
-            else:
-                self.logger.write("Warning: token not found in YAML config", "warning")
-            
-            # 处理其他字段映射
-            toml_data = {}
-            
-            # 必填字段
-            if 'network_code' in yaml_data:
-                toml_data['network_code'] = yaml_data['network_code']
-            else:
-                self.logger.write("Error: network_code is missing, cannot create valid TOML config", "critical")
+            # VNT2 YAML已经使用正确的字段名和格式，直接转换为TOML
+            # 只需确保必填字段存在
+            if 'network_code' not in yaml_data:
+                self.logger.write("Error: network_code is missing in YAML config", "critical")
                 return None
             
-            if 'server_address' in yaml_data:
-                # VNT2使用server数组
-                toml_data['server'] = [yaml_data['server_address']]
-            else:
-                self.logger.write("Error: server_address is missing, cannot create valid TOML config", "critical")
+            if 'server' not in yaml_data:
+                self.logger.write("Error: server is missing in YAML config", "critical")
                 return None
-            
-            # 可选字段映射
-            field_mapping = {
-                'ip': 'ip',
-                'password': 'password',
-                'device_name': 'device_name',
-                'device_id': 'device_id',
-                'compressor': None,  # 特殊处理
-                'tun_name': 'tun_name',
-                'mtu': 'mtu',
-                'ctrl_port': 'ctrl_port',
-                'tunnel_port': 'tunnel_port',
-            }
-            
-            for yaml_key, toml_key in field_mapping.items():
-                if yaml_key in yaml_data and toml_key:
-                    toml_data[toml_key] = yaml_data[yaml_key]
-            
-            # 特殊处理compressor字段
-            if 'compressor' in yaml_data:
-                compressor = yaml_data['compressor'].lower()
-                if compressor == 'lz4':
-                    toml_data['compress'] = True
-                    self.logger.write("Enabled LZ4 compression", "info")
-            
-            # 处理rtx、fec等布尔字段
-            if yaml_data.get('rtx', False):
-                toml_data['rtx'] = True
-            if yaml_data.get('fec', False):
-                toml_data['fec'] = True
-            
-            # 处理no_punch
-            if yaml_data.get('no_punch', False):
-                toml_data['no_punch'] = True
-            
-            # 处理no_nat
-            if yaml_data.get('no_nat', False):
-                toml_data['no_nat'] = True
-            
-            # 处理no_tun
-            if yaml_data.get('no_tun', False):
-                toml_data['no_tun'] = True
-            
-            # 处理allow_mapping
-            if yaml_data.get('allow_mapping', False):
-                toml_data['allow_mapping'] = True
-            
-            # 处理cert_mode
-            # VNT 2.0 使用自签名证书，默认使用 skip 模式跳过证书验证
-            # 只有在明确需要证书验证时才使用 standard 模式
-            if 'server_encrypt' in yaml_data:
-                # 对于自签名证书，统一使用 skip 模式
-                toml_data['cert_mode'] = 'skip'
-                self.logger.write("Set cert_mode to 'skip' (self-signed certificate)", "info")
-            else:
-                # 如果没有 server_encrypt 字段，也默认使用 skip
-                toml_data['cert_mode'] = 'skip'
-                self.logger.write("Set cert_mode to 'skip' (default for self-signed certificate)", "info")
             
             # 生成TOML文件路径（与YAML同目录，扩展名改为.toml）
             toml_path = str(Path(yaml_path).with_suffix('.toml'))
             
             self.logger.write(f"TOML data prepared, writing to: {toml_path}", "info")
-            self.logger.write(f"TOML keys: {list(toml_data.keys())}", "info")
+            self.logger.write(f"TOML keys: {list(yaml_data.keys())}", "info")
             
-            # 写入TOML文件
+            # 直接写入TOML文件（字段已符合VNT2规范）
             with open(toml_path, 'w', encoding='utf-8') as f:
-                toml.dump(toml_data, f)
+                toml.dump(yaml_data, f)
             
             self.logger.write(f"Successfully converted YAML to TOML: {yaml_path} -> {toml_path}", "info")
             return toml_path

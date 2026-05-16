@@ -1,44 +1,27 @@
 token: 
 device_id: 
-name: 
-server_address: 
+device_name: 
+server: 
 password: 
 ip: 
-server_encrypt: 
-cipher_model: 
+compress: false
+cipher_model: aes_gcm
+server_encrypt: true
+cert_mode: skip
+
 # 高级参数
-tap: false #是否使用tap 仅在windows上支持使用tap
-stun_server: #stun服务器
-  - stun.miwifi.com
-  - stun.chat.bilibili.com
-  - stun.hitv.com
-  - stun.cdnbye.com
-# in_ips: #代理ip入站
-#   - 0.0.0.0/0
-# out_ips: #代理ip出站
-#   - 0.0.0.0/0
-mtu: 1420  #mtu
-tcp: false #tcp模式
-use_channel: all #relay:仅中继模式.p2p:仅直连模式
-parallel: 1 #任务并行度
-finger: false #关闭数据指纹
-punch_model:  all #打洞模式，表示只使用ipv4地址打洞，默认会同时使用v6和v4
-ports:
-  - 0 #使用随机端口，tcp监听此端口
-  - 0
-cmd: false #关闭控制台输入
-no_proxy: false #是否关闭内置代理，true为关闭
-first_latency: false #是否优先低延迟通道，默认为false，表示优先使用p2p通道
-device_name: vnt-tun #网卡名称
-packet_loss: 0 #指定丢包率 取值0~1之间的数 用于模拟弱网
-packet_delay: 0 #指定延迟 单位毫秒 用于模拟弱网
-dns:
-  - 223.5.5.5 # 首选dns
-  - 114.114.114.114 # 备选dns  - 223.5.5.5 # 首选dns
-  - 8.8.8.8 # 备选dns
-# mapping:
-#   - udp:0.0.0.0:80-10.26.0.10:80 # 映射udp数据
-#   - tcp:0.0.0.0:80-10.26.0.10:81 # 映射tcp数据
-#   - tcp:0.0.0.0:82-localhost:83 # 映射tcp数据
-disable_stats: false # 为true表示关闭统计
-allow_wire_guard: false # 为true则表示允许接入wg
+# rtx: false  # 是否启用quic优化传输
+# fec: false  # 是否启用 FEC 前向纠错
+# no_punch: false  # 是否关闭 P2P 打洞
+# mtu: 1400  # MTU 设置
+# ctrl_port: 11233  # 控制服务的 tcp 端口
+# tunnel_port: 0  # 隧道端口，用于P2P通信 (默认为0，自动分配)
+# tun_name: vnt-tun  # 虚拟网卡名称
+# no_tun: false  # 是否关闭TUN虚拟网卡
+# no_nat: false  # 是否关闭内置子网NAT
+# allow_mapping: false  # 是否允许作为端口映射出口
+# port_mapping: []  # 端口映射
+# input: []  # 入栈监听网段
+# output: []  # 出栈允许网段
+# udp_stun: []  # 自定义udp stun地址
+# tcp_stun: []  # 自定义tcp stun地址
