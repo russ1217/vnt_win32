@@ -49,7 +49,7 @@ from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-VNT_HELPER_VERSION = "v4_2026.01.25.03"
+VNT_HELPER_VERSION = "v4_2026.05.19.03"
 VNT_CLI_LOG_FILE = 'vnt_cli.log'
 VNT_HELPER_CONFIG_FILE = "vnt_helper.yaml"
 VNT_CLIENT_NAME = "vnt2_cli.exe"  # VNT 2.0 客户端
@@ -343,10 +343,10 @@ class VNT_Helper_App():
                 ctypes.windll.kernel32.CloseHandle(hwnd)
             else:
                 print("\nVNT Helper Debug Console Started...\n")
-            _logger = VNT_Logger(workingdir, fn, True)
+            _logger = VNT_Logger(workingdir, fn, True, self.args.debug)
         else:
             try:
-                _logger = VNT_Logger(workingdir, fn, False)
+                _logger = VNT_Logger(workingdir, fn, False, self.args.debug)
             except Exception as e:
                 win32api.MessageBox(0, f"{e}", "LOGGER ERROR", win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
                 sys.exit(0)
@@ -894,6 +894,7 @@ class VNT_Helper_App():
             print(f"Warning: Translation file for '{lang_code}' not found. Using default language.")
 
         return _
+import socket
 
 
 class VNT_Connection():
@@ -914,6 +915,7 @@ class VNT_Connection():
         self.vnt_comm_thread = None
         self.vnt_monitor_thread = None
         self.connection_profile_ready = False
+        self._connected_notified = False  # 标记是否已显示过连接成功通知
 
     def __del__(self):
         pass
@@ -983,8 +985,12 @@ class VNT_Connection():
                 if resp.get("status") == "ok":
                     self.virtual_IP = resp.get("virtual_ip")
                     self.logger.write(f"[IPC] Get Virtual IP from Daemon: {self.virtual_IP}")
-            if self.vnt_app.bubble_msg_handler is not None and self.virtual_IP is not None and self.vnt_app.args.no_gui is False:
+            
+            # 只在首次连接成功时显示通知，避免重复显示
+            if not self._connected_notified and self.vnt_app.bubble_msg_handler is not None and self.virtual_IP is not None and self.vnt_app.args.no_gui is False:
                 self.vnt_app.bubble_msg_handler.msg(f"Connected#{self.VIRTUAL_IP_TEXT}{self.virtual_IP}")
+                self._connected_notified = True
+                self.logger.write("[IPC] Connection notification displayed.", 'debug')
 
         elif etype == "server_connection":
             self.vnt_app.vnt_server_version = event.get("server_version", "0.0.0")
@@ -1048,10 +1054,11 @@ class VNT_Connection():
 
                         if self.vnt_app.get_service_status() == "RUNNING":
                             resp = self.vnt_app.vnt_connection._send_ipc_command({"cmd": "exit"})
-                            if resp.get("status") != "daemon exits":
-                                self.logger.write(f"Daemon probably already exited: {resp.get('msg')}")
+                            # 新的 exit 命令只停止 vnt2_cli.exe，不终止守护进程
+                            if resp.get("status") == "ok":
+                                self.logger.write("Exit command succeeded: vnt2_cli.exe stopped")
                             else:
-                                self.logger.write("Daemon exit command replies with success...")
+                                self.logger.write(f"Daemon exit command response: {resp.get('msg', 'unknown')}")
 
                             self.logger.write("Stopping VNT daemon service from another session...", 'info')
                             self.vnt_app.stop_service()
@@ -1144,10 +1151,11 @@ class VNT_Connection():
 
     def stop_vnt_network(self):
         """仅通知 daemon 关闭网络（退出前调用）"""
-        if self.is_toggled_off() or self.running is False:
+        if not self.is_toggled_off() and self.running:
             self._send_ipc_command({"cmd": "stop_network"})
             self.toggled_off = True
             self.virtual_IP = None
+            self._connected_notified = False  # 重置连接通知标志，下次连接时可再次显示
             self.logger.write("VNT network stopped (daemon remains).")
 
     def cleanup(self):
@@ -1167,13 +1175,47 @@ class VNT_Connection():
             self.vnt_monitor_thread.start()
             time.sleep(0.5)
 
+    def stop_vnt_network(self):
+        """仅通知 daemon 关闭网络（Toggle OFF 或退出前调用）"""
+        self.logger.write(f"stop_vnt_network() called - toggled_off={self.toggled_off}, running={self.running}", "debug")
+        
+        # 只要还在运行，就发送停止命令（不检查 toggled_off 状态）
+        if self.running:
+            try:
+                self._send_ipc_command({"cmd": "stop_network"}, timeout=3)
+                self.toggled_off = True
+                self.virtual_IP = None
+                self._connected_notified = False  # 重置连接通知标志，下次连接时可再次显示
+                self.logger.write("VNT network stopped (daemon remains).")
+            except Exception as e:
+                self.logger.write(f"Failed to send stop_network command: {e}", "warning")
+        else:
+            self.logger.write("VNT connection is not running, skipping stop_network", "debug")
+
     def stop(self):
+        """停止 VNT 网络连接（GUI 退出时调用）"""
+        self.logger.write("VNT_Connection.stop() called - GUI is exiting", "info")
         self.running = False
+        
         if self.vnt_comm_thread:
-            # Since daemon now runs as a service, we should stop the network only, not the entire service
-            # The service should remain running for other purposes
-            self.stop_vnt_network()
-            self.vnt_comm_thread.join(timeout=1)
+            # GUI 退出时必须停止 vnt2_cli.exe，但保持守护进程运行
+            self.logger.write("GUI exiting, sending stop_network command to daemon...", "info")
+            
+            # 直接发送 stop_network 命令，不检查状态
+            try:
+                resp = self._send_ipc_command({"cmd": "stop_network"}, timeout=3)
+                self.logger.write(f"stop_network command response: {resp}", "info")
+                self.toggled_off = True
+                self.virtual_IP = None
+                self._connected_notified = False
+                self.logger.write("VNT network stopped successfully (daemon remains running).")
+            except Exception as e:
+                self.logger.write(f"Failed to send stop_network command: {e}", "warning")
+                self.logger.write("This may be because IPC connection is already closed", "warning")
+            
+            # 等待通信线程结束
+            self.vnt_comm_thread.join(timeout=2)
+            self.logger.write("VNT connection communication thread stopped.")
 
     def is_running(self):
         return self.running
@@ -1190,8 +1232,11 @@ class VNT_Connection():
         self.toggled_off = status
 
         if self.is_toggled_off():
+            # Toggle OFF: stop_vnt_network 会重置 _connected_notified
             self.stop_vnt_network()
         else:
+            # Toggle ON: 重置连接通知标志，允许下次连接时显示通知
+            self._connected_notified = False
             resp = self._send_ipc_command({"cmd": "start"})
             if resp.get("status") != "ok":
                 self.logger.write(f"Daemon start failed: {resp.get('msg', 'unknown')}")
@@ -1203,9 +1248,10 @@ class VNT_Connection():
 
 
 class VNT_Logger():
-    def __init__(self, workingdir, fn, no_logger=False):
+    def __init__(self, workingdir, fn, no_logger=False, debug_mode=False):
         self.log_fn = fn
         self.workingdir = workingdir
+        self.debug_mode = debug_mode  # 保存调试模式标志
         self._pid_state = {}
         self._lock = threading.Lock()  # ← 新增锁
 
@@ -1229,6 +1275,11 @@ class VNT_Logger():
             self._logger = None
 
     def write(self, txt, mode='info'):
+        # 如果不是调试模式，过滤掉包含 WARN 或 PunchReq 的消息
+        if not self.debug_mode:
+            if "WARN" in txt or "PunchReq" in txt:
+                return  # 直接跳过，不写入日志
+        
         current_pid = os.getpid()
         full_txt = f"PID {current_pid:<6} : {txt}"
         current_time = datetime.now()
@@ -4213,14 +4264,15 @@ class VNT_TaskBar_Icon(wx.adv.TaskBarIcon):
         global VNT_CLIENT_NAME
 
         if self.vnt_app.vnt_connection.is_toggled_off():
+            # Toggle ON: 启动VNT网络
             self.vnt_app.vnt_connection.toggle(False)
-            self.vnt_app.vnt_connection.toggled_off = False
             self.logger.write("VNT Daemon toggled on ...")
         else:
+            # Toggle OFF: 停止VNT网络
             self.vnt_app.vnt_connection.toggle(True)
-            self.vnt_app.vnt_connection.toggled_off = True
             time.sleep(0.5)
             self.vnt_app.vnt_connection.virtual_IP = None
+            # _connected_notified 已在 toggle() 方法中通过 stop_vnt_network() 重置
 
             self.vnt_app.bubble_msg_handler.msg("Status#Virtual IP turned off")
             self.logger.write("VNT Daemon toggled off ...")
@@ -4291,13 +4343,16 @@ class VNT_TaskBar_Icon(wx.adv.TaskBarIcon):
             self.vnt_app.vnt_connection.stop()
             time.sleep(1)
 
+            # Check if service is running and stop it before update
+            self.vnt_app.update_process_started = True
             if self.vnt_app.is_service_installed():
                 if self.vnt_app.get_service_status() == "RUNNING":
                     resp = self.vnt_app.vnt_connection._send_ipc_command({"cmd": "exit"})
-                    if resp.get("status") != "daemon exits":
-                        self.logger.write(f"Daemon probably already exited: {resp.get('msg')}")
+                    # 新的 exit 命令只停止 vnt2_cli.exe，不终止守护进程
+                    if resp.get("status") == "ok":
+                        self.logger.write("Exit command succeeded: vnt2_cli.exe stopped, daemon remains running")
                     else:
-                        self.logger.write("Daemon exit command replies with success...")
+                        self.logger.write(f"Daemon exit command response: {resp.get('msg', 'unknown')}")
                     self.logger.write("Stopping VNT daemon service before update...", 'info')
                     self.vnt_app.stop_service()
                 # Uninstall the old service

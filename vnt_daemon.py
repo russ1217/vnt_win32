@@ -71,6 +71,11 @@ class VNTDaemon():
         self.ver = '0.0.0'
         self.serial = 'unknown'
         self.server_version = '0.0.0'
+        
+        # GUI 连接跟踪
+        self.gui_connections = set()  # 跟踪所有连接的 GUI 客户端
+        self.gui_connection_lock = threading.Lock()
+        self.last_gui_disconnect_time = None
 
         self.inet_monitor = Internet_Connectivity_Monitor(self.logger)
         self.inet_monitor.start()
@@ -370,6 +375,7 @@ class VNTDaemon():
         self.logger.write("Monitoring vnt-cli process started...", "info")
         while self.running:
             if self.vnt_process and self.vnt_process.poll() is None:
+                # vnt2_cli.exe 正在运行
                 if self.need_to_check_internet and not Internet_Connectivity_Monitor.is_server_connected():
                     self.logger.write("Internet disconnected. Stopping vnt-cli network...", "info")
                     self.stop_vnt_cli_network()
@@ -377,10 +383,26 @@ class VNTDaemon():
                     self.need_to_check_internet = False
                 time.sleep(2)
             else:
+                # vnt2_cli.exe 未运行，检查是否应该自动启动
                 if self.inet_monitor.is_connected() and Internet_Connectivity_Monitor.is_server_connected():
                     if not self.toggled_off:
                         vnt_conf = VNT_Config(self.working_dir, VNT_HELPER_CONFIG_FILE, self.logger)
-                        if vnt_conf.get_value(VNT_Config.KEY_AUTORUN_CLI_ON_STARTUP) or self.gui_request_vnt_connection:
+                        
+                        # 检查是否有有效的配置文件
+                        config_path = vnt_conf.get_value(VNT_Config.KEY_VNT_CONNECTION_CONFIG_YAML)
+                        has_valid_config = config_path and Path(config_path).exists()
+                        
+                        # 自动启动条件：
+                        # 1. 配置了开机自启 (autorun_cli_on_startup)
+                        # 2. GUI 请求连接 (gui_request_vnt_connection)
+                        # 3. 存在有效的配置文件（Session 0 服务模式下自动连接）
+                        should_autostart = (
+                            vnt_conf.get_value(VNT_Config.KEY_AUTORUN_CLI_ON_STARTUP) or 
+                            self.gui_request_vnt_connection or
+                            has_valid_config  # 新增：有配置文件就自动连接
+                        )
+                        
+                        if should_autostart:
                             self.logger.write("vnt-cli not found. Try restarting...", "info")
                             self.need_to_check_internet = False
                             self.start_vnt_cli()
@@ -406,6 +428,11 @@ class VNTDaemon():
 
             if cmd.get("cmd") == "subscribe_events":
                 with self.event_push_lock:
+                    # 记录 GUI 连接
+                    with self.gui_connection_lock:
+                        self.gui_connections.add(conn)
+                        self.logger.write(f"[GUI TRACK] New GUI connection. Total: {len(self.gui_connections)}", "info")
+                    
                     if self.gui_event_conn:
                         try:
                             self.gui_event_conn.close()
@@ -479,10 +506,12 @@ class VNTDaemon():
 
             elif cmd["cmd"] == "exit":
                 self.logger.write(f"[DEBUG] Processing 'exit' command", "info")
-                self.logger.write(f"[DEBUG] Setting running=False", "info")
-                self.running = False
+                # 注意：作为 Windows 服务，守护进程不应退出，只停止 vnt2_cli.exe
+                self.logger.write(f"[DEBUG] GUI requesting exit - stopping vnt2_cli.exe but keeping daemon running", "info")
                 self.logger.write(f"[DEBUG] Calling stop_vnt_cli_network()...", "info")
-                self.stop_vnt_cli_network()
+                success = self.stop_vnt_cli_network()
+                self.logger.write(f"[DEBUG] stop_vnt_cli_network() returned: {success}", "info")
+                
                 if self.vnt_process:
                     self.logger.write(f"[DEBUG] Waiting for vnt_process to terminate (timeout=5s)...", "info")
                     try:
@@ -490,23 +519,48 @@ class VNTDaemon():
                         self.logger.write(f"[DEBUG] vnt_process terminated successfully", "info")
                     except Exception as e:
                         self.logger.write(f"[DEBUG] vnt_process wait timeout or error: {e}", "warning")
-                self.logger.write(f"[DEBUG] Sending exit confirmation", "info")
-                conn.send(json.dumps({"status": "daemon exits"}).encode())
+                
+                self.logger.write(f"[DEBUG] Sending exit confirmation (daemon stays running)", "info")
+                conn.send(json.dumps({"status": "ok", "msg": "vnt2_cli.exe stopped, daemon remains running"}).encode())
                 self.logger.write(f"[DEBUG] Exit confirmation sent", "info")
+
             else:
                 conn.send(json.dumps({"status": "error", "msg": "unknown command"}).encode())
 
         except json.JSONDecodeError:
             self.logger.write(f"[DEBUG] JSON decode error, closing connection", "warning")
+            # 清理 GUI 连接跟踪
+            with self.gui_connection_lock:
+                if conn in self.gui_connections:
+                    self.gui_connections.discard(conn)
+                    self.logger.write(f"[GUI TRACK] Connection removed (JSON error). Remaining: {len(self.gui_connections)}", "info")
             conn.close()
         except Exception as e:
             self.logger.write(f"[DEBUG] IPC exception caught: {type(e).__name__}: {e}", "critical")
             import traceback
             self.logger.write(f"[DEBUG] Traceback:\n{traceback.format_exc()}", "critical")
             if cmd.get("cmd") != "subscribe_events":
+                # 清理 GUI 连接跟踪
+                with self.gui_connection_lock:
+                    if conn in self.gui_connections:
+                        self.gui_connections.discard(conn)
+                        self.logger.write(f"[GUI TRACK] Connection removed (exception). Remaining: {len(self.gui_connections)}", "info")
                 self.logger.write(f"[DEBUG] Closing connection due to error", "info")
                 conn.close()
         finally:
+            # 清理 GUI 连接跟踪（确保连接关闭时被移除）
+            with self.gui_connection_lock:
+                if conn in self.gui_connections:
+                    self.gui_connections.discard(conn)
+                    remaining = len(self.gui_connections)
+                    self.logger.write(f"[GUI TRACK] Connection handler exited. Remaining GUI connections: {remaining}", "info")
+                    
+                    # 如果所有 GUI 都断开了，且 vnt2_cli.exe 正在运行，则停止它
+                    if remaining == 0 and self.vnt_process and self.vnt_process.poll() is None:
+                        self.logger.write("[GUI TRACK] All GUI clients disconnected. Stopping vnt2_cli.exe...", "info")
+                        self.stop_vnt_cli_network()
+                        self.toggled_off = True
+            
             self.logger.write(f"[DEBUG] ===== IPC Command Handler Exited =====", "info")
 
     def ipc_server_loop(self):
