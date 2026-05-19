@@ -49,7 +49,7 @@ from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-VNT_HELPER_VERSION = "v4_2026.05.19.03"
+VNT_HELPER_VERSION = "v4_2026.05.19.15"
 VNT_CLI_LOG_FILE = 'vnt_cli.log'
 VNT_HELPER_CONFIG_FILE = "vnt_helper.yaml"
 VNT_CLIENT_NAME = "vnt2_cli.exe"  # VNT 2.0 客户端
@@ -894,7 +894,6 @@ class VNT_Helper_App():
             print(f"Warning: Translation file for '{lang_code}' not found. Using default language.")
 
         return _
-import socket
 
 
 class VNT_Connection():
@@ -977,6 +976,12 @@ class VNT_Connection():
             ip = event.get("ip", "unknown")
             self.virtual_IP = ip
             self.logger.write(f"[IPC] IP Assigned. Virtual IP: {self.virtual_IP}", 'debug')
+            
+            # 当IP分配时，如果已连接但未通知，立即显示通知
+            if not self._connected_notified and self.vnt_app.bubble_msg_handler is not None and self.vnt_app.args.no_gui is False:
+                self.vnt_app.bubble_msg_handler.msg(f"Connected#{self.VIRTUAL_IP_TEXT}{self.virtual_IP}")
+                self._connected_notified = True
+                self.logger.write("[IPC] IP assigned notification displayed.", 'debug')
 
         elif etype == "connected":
             self.logger.write("[IPC] VNT Server Connected Successfully.")
@@ -986,7 +991,7 @@ class VNT_Connection():
                     self.virtual_IP = resp.get("virtual_ip")
                     self.logger.write(f"[IPC] Get Virtual IP from Daemon: {self.virtual_IP}")
             
-            # 只在首次连接成功时显示通知，避免重复显示
+            # 如果已有IP但未通知，显示通知
             if not self._connected_notified and self.vnt_app.bubble_msg_handler is not None and self.virtual_IP is not None and self.vnt_app.args.no_gui is False:
                 self.vnt_app.bubble_msg_handler.msg(f"Connected#{self.VIRTUAL_IP_TEXT}{self.virtual_IP}")
                 self._connected_notified = True
@@ -1018,28 +1023,72 @@ class VNT_Connection():
     def _maintain_vnt_daemon(self):
 
         def initialize_vnt_daemon():
-            try:
-                resp = self._send_ipc_command({"cmd": "status"})
-                if resp.get("status") == "ok" and resp.get("running") == "yes":
-                    ip = resp.get("virtual_ip")
-                    if Internet_Connectivity_Monitor.is_valid_IP(ip):
-                        self.virtual_IP = ip
-                        self.logger.write(f"VNT Daemon already running. Virtual IP: {self.virtual_IP}")
-                        self.toggled_off = False
+            """Initialize VNT daemon with retry logic for robustness"""
+            max_retries = 3
+            retry_delay = 2  # seconds
+            
+            for attempt in range(max_retries):
+                try:
+                    self.logger.write(f"Attempting to initialize VNT daemon (attempt {attempt + 1}/{max_retries})...", 'info')
+                    
+                    # First, check if daemon is already running
+                    resp = self._send_ipc_command({"cmd": "status"}, timeout=3)
+                    
+                    if resp.get("status") == "ok" and resp.get("running") == "yes":
+                        # Daemon is already running, check virtual IP
+                        ip = resp.get("virtual_ip")
+                        if Internet_Connectivity_Monitor.is_valid_IP(ip):
+                            self.virtual_IP = ip
+                            self.logger.write(f"VNT Daemon already running. Virtual IP: {self.virtual_IP}")
+                            self.toggled_off = False
+                            return True  # Success
+                        else:
+                            # Running but no valid IP, restart
+                            self.logger.write("Daemon running but no valid IP, restarting...", 'info')
+                            resp = self._send_ipc_command({"cmd": "restart"}, timeout=5)
+                            if resp.get("status") != "ok":
+                                raise RuntimeError(f"Daemon restart failed: {resp.get('msg', 'unknown')}")
+                            self.logger.write("Daemon restarted successfully", 'info')
+                            return True
+                    
                     else:
-                        resp = self._send_ipc_command({"cmd": "restart"})
-                        if resp.get("status") != "ok":
-                            raise RuntimeError(f"initialize_vnt_daemon failed: {resp.get('msg', 'unknown')}")
-
-                else:
-                    if not self.toggled_off:
-                        resp = self._send_ipc_command({"cmd": "start"})
-                        if resp.get("status") != "ok":
-                            raise RuntimeError(f"Daemon start failed: {resp.get('msg', 'unknown')}")
+                        # Daemon not running, start it
+                        if not self.toggled_off:
+                            self.logger.write("Daemon not running, sending start command...", 'info')
+                            resp = self._send_ipc_command({"cmd": "start"}, timeout=5)
+                            
+                            if resp.get("status") != "ok":
+                                error_msg = resp.get('msg', 'unknown')
+                                self.logger.write(f"Daemon start command failed: {error_msg}", 'warning')
+                                
+                                # If this is not the last attempt, wait and retry
+                                if attempt < max_retries - 1:
+                                    self.logger.write(f"Retrying in {retry_delay} seconds...", 'info')
+                                    time.sleep(retry_delay)
+                                    continue
+                                else:
+                                    raise RuntimeError(f"Daemon start failed after {max_retries} attempts: {error_msg}")
+                            else:
+                                self.logger.write("Daemon start command succeeded", 'info')
+                                return True
+                        else:
+                            # User has toggled off, don't start
+                            self.stop_vnt_network()
+                            return True
+                            
+                except Exception as e:
+                    self.logger.write(f"Initialize vnt daemon error (attempt {attempt + 1}): {e}", 'warning')
+                    
+                    # If this is not the last attempt, wait and retry
+                    if attempt < max_retries - 1:
+                        self.logger.write(f"Retrying in {retry_delay} seconds...", 'info')
+                        time.sleep(retry_delay)
                     else:
-                        self.stop_vnt_network()
-            except Exception as e:
-                self.logger.write(f"Intialize vnt daemon error: {e}", 'critical')
+                        # Last attempt failed
+                        self.logger.write(f"Failed to initialize VNT daemon after {max_retries} attempts", 'critical')
+                        return False
+            
+            return False
 
         vnt_config_file = None
         vnt_conf = VNT_Config(self.workingdir, self.config_fn, self.logger)
@@ -1106,8 +1155,17 @@ class VNT_Connection():
                     success = self.vnt_app.start_service()
                     if success:
                         self.virtual_IP = None
-                        initialize_vnt_daemon()
-                        self.logger.write("initialize_vnt_daemon() successfully", 'info')
+                        # Wait for the service to fully initialize before sending IPC commands
+                        # The daemon needs time to start up and begin listening on the IPC port
+                        self.logger.write("Service started, waiting for daemon initialization...", 'info')
+                        time.sleep(3)  # Give daemon time to initialize IPC listener
+                        
+                        # Verify service is actually running before proceeding
+                        if self.vnt_app.is_service_running(False):
+                            initialize_vnt_daemon()
+                            self.logger.write("initialize_vnt_daemon() successfully", 'info')
+                        else:
+                            self.logger.write("Service failed to stay running after start", 'critical')
                     else:
                         self.logger.write("_maintain_vnt_daemon, self.vnt_app.start_service() failed", 'critical')
                 except Exception as e:
@@ -1275,10 +1333,30 @@ class VNT_Logger():
             self._logger = None
 
     def write(self, txt, mode='info'):
-        # 如果不是调试模式，过滤掉包含 WARN 或 PunchReq 的消息
+        # 如果不是调试模式，过滤掉打洞相关的冗余日志和警告信息
         if not self.debug_mode:
-            if "WARN" in txt or "PunchReq" in txt:
-                return  # 直接跳过，不写入日志
+            # 过滤条件列表
+            filter_keywords = [
+                "WARN",                    # 所有警告信息
+                "PunchReq",                # 打洞请求
+                "PunchRes",                # 打洞响应
+                "punching",                # 正在打洞
+                "PunchInfo",               # 打洞信息
+                "对方回复开始打洞",         # 对方回复打洞
+                "对方主动发起打洞",         # 对方主动打洞
+                "打洞成功",                # 打洞成功
+                "stun tcp read error",     # STUN TCP 读取错误
+                "tcp connect timeout",     # TCP 连接超时
+                "stun ",                   # STUN 探测日志（注意末尾有空格）
+                "nat_type:",               # NAT 类型检测
+                "tunnel TCP-Some",         # 隧道连接建立
+                "drop tunnel",             # 隧道连接断开
+            ]
+            
+            # 检查是否包含任何需要过滤的关键词
+            for keyword in filter_keywords:
+                if keyword in txt:
+                    return  # 直接跳过，不写入日志
         
         current_pid = os.getpid()
         full_txt = f"PID {current_pid:<6} : {txt}"
@@ -3538,14 +3616,14 @@ class VNT_Update_Window(wx.Frame):
                 self.logger.write("VNT update daemon exit flag set, exiting update daemon thread")
                 return
 
-            while True:
-                if self.vnt_update_daemon_exit_flag.is_set():
-                    self.logger.write("VNT update daemon exit flag set, exiting update daemon thread")
-                    return
-                can_update = vnt_conf.get_value(VNT_Config.KEY_AUTO_UPDATE_ENABLED)
-                if can_update and can_update is not None:
-                    break
+            # Check if auto update is enabled before proceeding
+            can_update = vnt_conf.get_value(VNT_Config.KEY_AUTO_UPDATE_ENABLED)
+            update_disabled = vnt_conf.get_value(VNT_Config.KEY_UPDATE_DISABLED)
+            
+            # If update is disabled or auto update is not enabled, skip the update check
+            if update_disabled or not can_update:
                 time.sleep(1)
+                continue
 
             if i % self.update_check_cycle_sec == 0:  # check periodically seconds
                 if not self.vnt_update_in_progress_flag.is_set():
@@ -3553,12 +3631,14 @@ class VNT_Update_Window(wx.Frame):
                         ver_diff, allowed = self._update_version_check(self.vnt_app.args.no_gui)
                         if ver_diff and allowed:
                             if self._update_download(self.vnt_app.args.no_gui):
+                                # Double check auto update is still enabled before proceeding with update
                                 can_update = vnt_conf.get_value(VNT_Config.KEY_AUTO_UPDATE_ENABLED)
-                                if can_update and can_update is not None:
+                                if can_update:
                                     self._update_and_exit()
                     else:
+                        # Double check auto update is still enabled before proceeding with update
                         can_update = vnt_conf.get_value(VNT_Config.KEY_AUTO_UPDATE_ENABLED)
-                        if can_update and can_update is not None:
+                        if can_update:
 
                             checksum_remote = version_conf.get_value(VNT_Config.KEY_CHECKSUM)
                             checksum_local = self.calculate_SHA256(os.path.join(self.workingdir, self.update_package_fn))
@@ -4343,27 +4423,42 @@ class VNT_TaskBar_Icon(wx.adv.TaskBarIcon):
             self.vnt_app.vnt_connection.stop()
             time.sleep(1)
 
-            # Check if service is running and stop it before update
+            # ⭐ 重置操作：完全关闭守护进程
             self.vnt_app.update_process_started = True
             if self.vnt_app.is_service_installed():
                 if self.vnt_app.get_service_status() == "RUNNING":
-                    resp = self.vnt_app.vnt_connection._send_ipc_command({"cmd": "exit"})
-                    # 新的 exit 命令只停止 vnt2_cli.exe，不终止守护进程
+                    # 使用新的 shutdown_daemon 命令完全退出守护进程
+                    self.logger.write("Sending shutdown_daemon command to fully exit daemon...", 'info')
+                    resp = self.vnt_app.vnt_connection._send_ipc_command({"cmd": "shutdown_daemon"})
                     if resp.get("status") == "ok":
-                        self.logger.write("Exit command succeeded: vnt2_cli.exe stopped, daemon remains running")
+                        self.logger.write("Shutdown daemon command succeeded, waiting for daemon to exit...")
+                        # 等待守护进程完全退出
+                        time.sleep(2)
                     else:
-                        self.logger.write(f"Daemon exit command response: {resp.get('msg', 'unknown')}")
-                    self.logger.write("Stopping VNT daemon service before update...", 'info')
+                        self.logger.write(f"Shutdown daemon command response: {resp.get('msg', 'unknown')}")
+                    
+                    # 停止Windows服务
+                    self.logger.write("Stopping VNT daemon service...", 'info')
                     self.vnt_app.stop_service()
-                # Uninstall the old service
-                self.logger.write("Uninstalling old VNT daemon service...", 'info')
+                
+                # 卸载服务
+                self.logger.write("Uninstalling VNT daemon service...", 'info')
                 self.vnt_app.uninstall_service()
 
-            os.remove(connection_config_file)
-            os.remove(os.path.join(self.workingdir, self.config_fn))
+            # 删除配置文件
+            if os.path.exists(connection_config_file):
+                os.remove(connection_config_file)
+                self.logger.write(f"Removed config file: {connection_config_file}")
+            
+            if os.path.exists(os.path.join(self.workingdir, self.config_fn)):
+                os.remove(os.path.join(self.workingdir, self.config_fn))
+                self.logger.write(f"Removed helper config file")
+            
+            # 移除自启动
             self.vnt_app.reg_task_autorun.remove_autorun()
             time.sleep(0.1)
 
+            # 停止GUI应用
             self.vnt_app.stop()
         except Exception as e:
             self.logger.write(f"Reset {e}", 'critical')
@@ -5923,9 +6018,8 @@ class Bubble_Message():
                         # Skip showing the message
                         pass
                     elif m != LAST_STATUS_MSG or VNT_Connection.VIRTUAL_IP_TEXT in m:
-                        toast = Notification(app_id="VNT Helper", title=m.split('#')[0], msg=m.split('#')[1].rstrip(), icon=self.ico_path)
+                        toast = Notification(app_id="VNT Network Helper", title=m.split('#')[0], msg=m.split('#')[1].rstrip(), icon=self.ico_path)
                         toast.show()
-                        print(f"Bubble message: {m.replace('#', ' : ')}")
                         # Update the last message and time when actually showing a message
                         LAST_STATUS_MSG = m
                         LAST_STATUS_TIME = current_time

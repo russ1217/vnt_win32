@@ -1,12 +1,11 @@
-update_enabled: true
 auto_update_enabled: false
-update_file_url: http://172.16.0.200:11061/chfs/shared/001/vnt_helper.zip
-update_version_url: http://172.16.0.200:11061/chfs/shared/001/version.yaml
+update_file_url: http://10.10.0.200:11061/chfs/shared/001/vnt_helper.zip
+update_version_url: http://10.10.0.200:11061/chfs/shared/001/version.yaml
 update_cycle_sec: 600
 notification_enabled: true
 display_language: en
 autorun_cli_on_startup: true
 ipc_port: 58432
+profile_list: zenbook
 previous_profile: ''
-config_name: C:\RussApp\v4\test.yaml
-profile_list: test
+config_name: C:\RussApp\vnt version 2 development\zenbook.yaml

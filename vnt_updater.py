@@ -22,8 +22,8 @@ class VNT_Updater:
     DEFAULT_WORKING_DIR = '.'
     DEFAULT_UPDATE_ZIP = 'vnt_helper.zip'
     DEFAULT_EXE_NAME = 'vnt_helper.exe'
-    DEFAULT_CLI_NAME = 'vnt-cli.exe'
-    DEFAULT_FILES_TO_UPDATE = ['vnt_helper.exe', 'vnt-cli.exe', 'vnt_service.exe', 'wintun.dll']
+    DEFAULT_CLI_NAME = 'vnt2_cli.exe'
+    DEFAULT_FILES_TO_UPDATE = ['vnt_helper.exe', 'vnt2_cli.exe', 'vnt_service.exe', 'wintun.dll']
     DEFAULT_LOG_FILE = 'vnt_cli.log'
 
     def __init__(self):
@@ -84,8 +84,8 @@ class VNT_Updater:
         if self.logger:
             getattr(self.logger, level.lower())(f"PID {os.getppid():<6} : {msg}")
             print(f"PID {os.getppid():<6} : {msg}")
-        if not self.run_in_background and level.upper() == "CRITICAL":
-            win32api.MessageBox(0, msg, "Updater Error", win32con.MB_OK | win32con.MB_ICONERROR)
+        # Removed automatic MessageBox for CRITICAL errors to ensure fully automated updates
+        # All errors should be logged and handled programmatically without user interaction
 
     def run_as_admin(self) -> None:
         if ctypes.windll.shell32.IsUserAnAdmin():
@@ -123,28 +123,69 @@ class VNT_Updater:
         if not pids:
             return
 
-        self.log("INFO", f"Found {len(pids)} instance(s) of {process_name}, attempting to terminate...")
+        self.log("INFO", f"Found {len(pids)} instance(s) of {process_name}, attempting to terminate gracefully...")
         for pid in pids:
             try:
-                os.kill(pid, signal.SIGINT)
+                # Try graceful termination first with SIGTERM (Windows equivalent via psutil)
+                proc = psutil.Process(pid)
+                proc.terminate()  # Sends WM_CLOSE on Windows
+                self.log("INFO", f"Sent termination signal to PID {pid} : {process_name}")
+            except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                self.log("WARNING", f"Process PID {pid} already exited or access denied: {e}")
             except Exception as e:
-                self.log("ERROR", f"Failed to kill PID {pid}: {e}")
-                if not self.run_in_background:
-                    win32api.MessageBox(0, "Failed to manage process. Run as admin?", "Error",
-                                        win32con.MB_OK | win32con.MB_ICONERROR)
-            finally:
-                self.log("INFO", f"Killed PID {pid} : {process_name}")
+                self.log("WARNING", f"Failed to terminate PID {pid} gracefully: {e}")
+
+    def force_kill_processes(self, process_name: str) -> None:
+        """Force kill processes that don't respond to terminate"""
+        pids = self.get_running_pids(process_name)
+        if not pids:
+            return
+
+        self.log("INFO", f"Force killing {len(pids)} instance(s) of {process_name}...")
+        for pid in pids:
+            try:
+                proc = psutil.Process(pid)
+                proc.kill()  # Force kill on Windows
+                self.log("INFO", f"Force killed PID {pid} : {process_name}")
+            except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                self.log("WARNING", f"Process PID {pid} already exited or access denied during force kill: {e}")
+            except Exception as e:
+                self.log("ERROR", f"Failed to force kill PID {pid}: {e}")
+                # Removed MessageBox to ensure fully automated updates - errors logged only
 
     def wait_for_process_exit(self, process_name: str, max_wait_sec: int = 60, force_after_sec: int = 30) -> None:
+        """Wait for process to exit, with graceful terminate and force kill fallback"""
         for i in range(max_wait_sec):
             if not self.get_running_pids(process_name):
+                self.log("INFO", f"{process_name} has exited successfully")
                 return
+            
+            # At force_after_sec, try graceful termination
             if i == force_after_sec:
+                self.log("INFO", f"{process_name} still running after {force_after_sec}s, sending terminate signal...")
                 self.kill_processes(process_name)
+            
+            # At max_wait_sec - 5, force kill if still running
+            if i == max_wait_sec - 5:
+                self.log("WARNING", f"{process_name} not responding to terminate, force killing...")
+                self.force_kill_processes(process_name)
+                
                 if self.resource_dir:
                     self.clean_temp_folder()
+            
             time.sleep(1)
-            self.log("DEBUG", f"{process_name} still running (round #{i})")
+            if i < 10 or i % 10 == 0:  # Log less frequently
+                self.log("DEBUG", f"{process_name} still running (round #{i}/{max_wait_sec})")
+        
+        # Final check
+        remaining_pids = self.get_running_pids(process_name)
+        if remaining_pids:
+            self.log("CRITICAL", f"{process_name} still running after {max_wait_sec}s! PIDs: {remaining_pids}")
+            # One last force kill attempt
+            self.force_kill_processes(process_name)
+            time.sleep(2)
+        else:
+            self.log("INFO", f"{process_name} finally exited")
 
     def clean_temp_folder(self) -> None:
         if not self.resource_dir or not os.path.isdir(self.resource_dir):
@@ -208,8 +249,7 @@ class VNT_Updater:
             self.log("INFO", "Successfully deployed update.")
         except Exception as e:
             self.log("CRITICAL", f"Failed to deploy update from {zip_path}: {e}")
-            if not self.run_in_background:
-                win32api.MessageBox(0, f"Update failed: {e}", "Status", win32con.MB_OK | win32con.MB_ICONERROR)
+            # Removed MessageBox to ensure fully automated updates
             sys.exit(1)
 
     def is_service_installed(self):
@@ -383,6 +423,20 @@ class VNT_Updater:
             self.log("CRITICAL", f"Error getting service status: {e}")
             return "ERROR"
 
+    def _find_all_cli_processes(self):
+        """Find all vnt2_cli.exe processes, including orphaned ones"""
+        pids = []
+        try:
+            for proc in psutil.process_iter(['pid', 'name']):
+                try:
+                    if proc.info['name'] and self.cli_exe.lower() in proc.info['name'].lower():
+                        pids.append(proc.info['pid'])
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+        except Exception as e:
+            self.log("WARNING", f"Error scanning for CLI processes: {e}")
+        return pids
+
     def launch_updated_program(self) -> None:
         exe_path = os.path.join(self.working_dir, self.main_exe)
         if not os.path.isfile(exe_path):
@@ -401,9 +455,7 @@ class VNT_Updater:
             sys.exit(0)
         except OSError as e:
             self.log("CRITICAL", f"Failed to start updated {self.DEFAULT_EXE_NAME} : {e}")
-            if not self.run_in_background:
-                win32api.MessageBox(0, f"Failed to start {self.DEFAULT_EXE_NAME} : {e}", "Status",
-                                    win32con.MB_OK | win32con.MB_ICONERROR)
+            # Removed MessageBox to ensure fully automated updates
             sys.exit(1)
 
     def run(self) -> None:
@@ -411,21 +463,80 @@ class VNT_Updater:
         self.setup_logger()
         self.run_as_admin()
 
-        # Wait and kill main helper
+        self.log("INFO", "Starting VNT Updater...")
+        
+        # Step 1: Stop service first (this should also stop vnt2_cli.exe)
+        if self.is_service_installed():
+            service_status = self.get_service_status()
+            self.log("INFO", f"VNT Daemon Service status: {service_status}")
+            
+            if service_status == "RUNNING":
+                self.log("INFO", "Stopping VNT daemon service...")
+                self.stop_service()
+                
+                # Wait for service to fully stop
+                self.log("INFO", "Waiting for service to exit...")
+                self.wait_for_process_exit(self.service_exe, max_wait_sec=15, force_after_sec=8)
+            
+            # Uninstall the service
+            self.log("INFO", "Uninstalling VNT daemon service...")
+            self.uninstall_service()
+        else:
+            self.log("INFO", "VNT daemon service not installed, checking for standalone processes...")
+
+        # Step 1.5: Aggressively clean up any remaining CLI processes
+        # This is critical after update to prevent multiple CLI instances
+        self.log("INFO", "Cleaning up any remaining vnt2_cli.exe processes...")
+        self.wait_for_process_exit(self.cli_exe, max_wait_sec=10, force_after_sec=3)
+        
+        # Extra cleanup: scan for any orphaned CLI processes by name pattern
+        orphaned_pids = self._find_all_cli_processes()
+        if orphaned_pids:
+            self.log("WARNING", f"Found {len(orphaned_pids)} orphaned CLI processes: {orphaned_pids}")
+            for pid in orphaned_pids:
+                try:
+                    proc = psutil.Process(pid)
+                    proc.kill()
+                    self.log("INFO", f"Force killed orphaned CLI process PID: {pid}")
+                except Exception as e:
+                    self.log("WARNING", f"Failed to kill PID {pid}: {e}")
+            time.sleep(2)  # Give system time to clean up
+
+        # Step 2: Kill any remaining vnt_helper.exe instances
+        self.log("INFO", "Checking for VNT Helper processes...")
         self.wait_for_process_exit(self.main_exe, max_wait_sec=60, force_after_sec=30)
 
-        # Kill daemon, service, and CLI (shorter timeout)
-        # self.wait_for_process_exit(self.daemon_exe, max_wait_sec=11, force_after_sec=10)
-        self.wait_for_process_exit(self.service_exe, max_wait_sec=11, force_after_sec=10)
-        self.wait_for_process_exit(self.cli_exe, max_wait_sec=11, force_after_sec=10)
+        # Step 3: Double-check all processes are gone
+        self.log("INFO", "Final process cleanup check...")
+        remaining_cli = self.get_running_pids(self.cli_exe)
+        remaining_service = self.get_running_pids(self.service_exe)
+        remaining_helper = self.get_running_pids(self.main_exe)
+        
+        if remaining_cli:
+            self.log("WARNING", f"vnt2_cli.exe still running! PIDs: {remaining_cli}, force killing...")
+            self.force_kill_processes(self.cli_exe)
+            time.sleep(2)
+        
+        if remaining_service:
+            self.log("WARNING", f"vnt_service.exe still running! PIDs: {remaining_service}, force killing...")
+            self.force_kill_processes(self.service_exe)
+            time.sleep(2)
+        
+        if remaining_helper:
+            self.log("WARNING", f"vnt_helper.exe still running! PIDs: {remaining_helper}, force killing...")
+            self.force_kill_processes(self.main_exe)
+            time.sleep(2)
 
-        # Remove old files
+        # Step 4: Remove old files
+        self.log("INFO", "Removing old files...")
         self.delete_old_files()
 
-        # Deploy new version
+        # Step 5: Deploy new version
+        self.log("INFO", "Deploying update package...")
         self.deploy_update()
 
-        # Launch updated program
+        # Step 6: Launch updated program
+        self.log("INFO", "Launching updated VNT Helper...")
         self.launch_updated_program()
 
 

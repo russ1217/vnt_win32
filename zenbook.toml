@@ -1,0 +1,10 @@
+device_id = "zenbook"
+device_name = "zenbook"
+server = [ "quic://vnts.app:11465",]
+password = "011774"
+ip = "10.10.0.18"
+compress = true
+cipher_model = "aes_gcm"
+server_encrypt = true
+cert_mode = "skip"
+network_code = "russvnt2"
