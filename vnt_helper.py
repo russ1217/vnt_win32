@@ -49,7 +49,7 @@ from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-VNT_HELPER_VERSION = "v4_2026.05.19.15"
+VNT_HELPER_VERSION = "v4_2026.05.19.18"
 VNT_CLI_LOG_FILE = 'vnt_cli.log'
 VNT_HELPER_CONFIG_FILE = "vnt_helper.yaml"
 VNT_CLIENT_NAME = "vnt2_cli.exe"  # VNT 2.0 客户端
@@ -2594,7 +2594,7 @@ class VNT_Update_Window(wx.Frame):
         vnt_conf = VNT_Config(self.workingdir, self.config_fn, self.logger)
         can_update = vnt_conf.get_value(VNT_Config.KEY_AUTO_UPDATE_ENABLED)
         update_disabled = vnt_conf.get_value(VNT_Config.KEY_UPDATE_DISABLED)
-
+        
         # 如果AUTO_UPDATE_ENABLED为True，或者所有配置都是None/False（首次运行），则启动daemon
         if can_update or (can_update is None and update_disabled is None):
             self.vnt_update_daemon = threading.Thread(target=self._vnt_update_daemon, args=())
@@ -3592,7 +3592,6 @@ class VNT_Update_Window(wx.Frame):
             return False, False
 
     def _vnt_update_daemon(self):
-
         vnt_conf = VNT_Config(self.workingdir, self.config_fn, self.logger)
         version_conf = VNT_Config(self.workingdir, self.version_control_fn, self.logger)
         i = 1
@@ -3601,8 +3600,6 @@ class VNT_Update_Window(wx.Frame):
             self.logger.write("Error Initialize Update Parameters, automatic update will not work.", 'critical')
             while not self._update_initialize_parameters() and not self.vnt_update_daemon_exit_flag.is_set():
                 time.sleep(5)
-        else:
-            self.logger.write("Update parameters initialized, Entering update daemon loop...", 'info')
 
         time.sleep(5)  # Give VNT connection time to set up
 

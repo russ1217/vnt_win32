@@ -1,4 +1,4 @@
-version: v4_2026.05.19.15
-checksum: ecf42a1d4dcdf8c15da32757ddc74738b92fa9f2b332bf8036f81404771e4956
+version: v4_2026.05.19.18
+checksum: 1f3d4b27ae218fa9fccc54c63f4809089011cfa88b5bd120a34635859977742e
 exclude: 10.10.0.6
 update_file_url: http://10.10.0.4:11060/files/vnt_helper.zip
