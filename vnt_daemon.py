@@ -30,25 +30,25 @@ class VNTDaemon():
     EVENT_PATTERNS = [
         # IP地址分配 - VNT 2.0格式: "Registration completed, IP: 10.10.0.18, prefix_len: 24"
         (re.compile(r"Registration completed, IP:\s*([0-9.]+)"), "IP_assigned"),
-        
+
         # 连接成功 - VNT 2.0中文输出: "已连接服务器:quic://..."
         (re.compile(r"已连接服务器:"), "connected"),
-        
+
         # 错误信息
         (re.compile(r"ERROR"), "error"),
-        
+
         # 配置错误
         (re.compile(r"Error conf"), "error_conf"),
-        
+
         # 重连计数 - VNT 2.0可能使用不同格式，暂时保留
         (re.compile(r"connect count="), "reconnect_count"),
-        
+
         # 版本信息 - VNT 2.0格式: 'version: "2.0.0"'
         (re.compile(r'version:\s*"([^"]+)"'), "version_info"),
-        
+
         # 序列号 - VNT 2.0格式待确认，暂时保留原模式
         (re.compile(r"Serial:"), "serial_info"),
-        
+
         # 服务器连接/版本 - VNT 2.0可能在注册时显示
         (re.compile(r"server version="), "server_connection"),
     ]
@@ -71,7 +71,7 @@ class VNTDaemon():
         self.ver = '0.0.0'
         self.serial = 'unknown'
         self.server_version = '0.0.0'
-        
+
         # GUI 连接跟踪
         self.gui_connections = set()  # 跟踪所有连接的 GUI 客户端
         self.gui_connection_lock = threading.Lock()
@@ -80,11 +80,11 @@ class VNTDaemon():
         self.inet_monitor = Internet_Connectivity_Monitor(self.logger)
         self.inet_monitor.start()
         self.need_to_check_internet = False
-        
+
         # ⭐ 重构状态管理：清晰区分不同启动模式
         self.auto_start_mode = False  # Session 0 服务模式：服务启动后自动运行CLI
         self.gui_started_cli = False  # Session 1 GUI模式：CLI由GUI的"start"命令启动
-        
+
         # 读取IPC端口配置
         try:
             vnt_conf = VNT_Config(self.working_dir, VNT_HELPER_CONFIG_FILE, self.logger)
@@ -95,14 +95,17 @@ class VNTDaemon():
                 try:
                     port_num = int(ipc_port_reading)
                     if not (1 <= port_num <= 65535):
-                        self.logger.write(f"Invalid IPC port value from config: {port_num} (must be between 1-65535), using default", 'critical')
+                        self.logger.write(
+                            f"Invalid IPC port value from config: {port_num} (must be between 1-65535), using default", 'critical')
                         self.IPC_PORT = DEFAULT_IPC_PORT  # Use default port
                     else:
                         # Valid port number, use the configured value
                         self.IPC_PORT = port_num
                         self.logger.write(f"Using configured IPC port: {port_num}", 'info')
                 except (ValueError, TypeError):
-                    self.logger.write(f"Invalid IPC port value from config: {ipc_port_reading} (not a valid number), using default", 'critical')
+                    self.logger.write(
+                        f"Invalid IPC port value from config: {ipc_port_reading} (not a valid number), using default",
+                        'critical')
                     self.IPC_PORT = DEFAULT_IPC_PORT  # Use default port
             else:
                 # If no port is configured, use the default
@@ -116,7 +119,8 @@ class VNTDaemon():
     def _get_working_dir(self):
 
         if getattr(sys, 'frozen', False):
-            curpath = os.path.dirname(sys.executable)   # EXE path, in case autorun with REGISTRY, it becomes WINDOWS\SYSTEM32
+            # EXE path, in case autorun with REGISTRY, it becomes WINDOWS\SYSTEM32
+            curpath = os.path.dirname(sys.executable)
         elif __file__:
             curpath = os.path.dirname(os.path.abspath(__file__))
 
@@ -129,32 +133,32 @@ class VNTDaemon():
         """
         try:
             self.logger.write(f"Starting YAML to TOML conversion: {yaml_path}", "info")
-            
+
             # 检查文件是否存在
             if not Path(yaml_path).exists():
                 self.logger.write(f"YAML config file does not exist: {yaml_path}", "critical")
                 return None
-            
+
             # 读取YAML文件
             with open(yaml_path, 'r', encoding='utf-8') as f:
                 yaml_data = yaml.safe_load(f)
-            
+
             if not yaml_data:
                 self.logger.write("YAML config is empty", "critical")
                 return None
-            
+
             self.logger.write(f"YAML data loaded successfully, keys: {list(yaml_data.keys())}", "info")
-            
+
             # VNT2 YAML已经使用正确的字段名和格式，直接转换为TOML
             # 只需确保必填字段存在
             if 'network_code' not in yaml_data:
                 self.logger.write("Error: network_code is missing in YAML config", "critical")
                 return None
-            
+
             if 'server' not in yaml_data:
                 self.logger.write("Error: server is missing in YAML config", "critical")
                 return None
-            
+
             # VNT2 CLI 要求 server 字段为数组格式
             # 如果 server 是字符串，转换为单元素数组
             if isinstance(yaml_data['server'], str):
@@ -163,20 +167,20 @@ class VNTDaemon():
             elif not isinstance(yaml_data['server'], list):
                 self.logger.write(f"Error: server has invalid type: {type(yaml_data['server'])}", "critical")
                 return None
-            
+
             # 生成TOML文件路径（与YAML同目录，扩展名改为.toml）
             toml_path = str(Path(yaml_path).with_suffix('.toml'))
-            
+
             self.logger.write(f"TOML data prepared, writing to: {toml_path}", "info")
             self.logger.write(f"TOML keys: {list(yaml_data.keys())}", "info")
-            
+
             # 直接写入TOML文件（字段已符合VNT2规范）
             with open(toml_path, 'w', encoding='utf-8') as f:
                 toml.dump(yaml_data, f)
-            
+
             self.logger.write(f"Successfully converted YAML to TOML: {yaml_path} -> {toml_path}", "info")
             return toml_path
-            
+
         except Exception as e:
             import traceback
             error_trace = traceback.format_exc()
@@ -215,7 +219,9 @@ class VNTDaemon():
 
         # Double-check: ensure no CLI process is running before starting new one
         if self._is_cli_process_running():
-            self.logger.write("VNTDaemon: vnt-cli is already running (verified by process scan), skipping start", "info")
+            self.logger.write(
+                "VNTDaemon: vnt-cli is already running (verified by process scan), skipping start",
+                "info")
             return True
 
         # 将YAML配置转换为TOML格式
@@ -226,17 +232,17 @@ class VNTDaemon():
             return False
 
         self.logger.write(f"TOML config created: {toml_config_path}", "info")
-        
+
         # 检查vnt2_cli.exe是否存在
         if not Path(self.vnt_cli_path).exists():
             self.logger.write(f"vnt2_cli.exe not found at: {self.vnt_cli_path}", "critical")
             return False
-        
+
         self.logger.write(f"vnt2_cli.exe found at: {self.vnt_cli_path}", "info")
 
         cmd = [str(self.vnt_cli_path), "--conf", str(toml_config_path)]
         self.logger.write(f"Executing command: {' '.join(cmd)}", "info")
-        
+
         try:
             # Clean up old process object before creating new one
             if self.vnt_process:
@@ -254,7 +260,7 @@ class VNTDaemon():
                     self.logger.write(f"Error cleaning up old process object: {e}", "warning")
                 finally:
                     self.vnt_process = None
-            
+
             self.vnt_process = subprocess.Popen(
                 cmd,
                 cwd=self.working_dir,
@@ -268,14 +274,14 @@ class VNTDaemon():
                 creationflags=subprocess.CREATE_NO_WINDOW
             )
             self.logger.write(f"vnt2_cli.exe process started with PID: {self.vnt_process.pid}", "info")
-            
+
             # Verify the process actually started and is running
             time.sleep(0.5)  # Give it a moment to initialize
             if self.vnt_process.poll() is not None:
                 # Process exited immediately
                 exit_code = self.vnt_process.poll()
                 self.logger.write(f"CRITICAL: vnt2_cli.exe exited immediately with code {exit_code}", "critical")
-                
+
                 # Try to read any error output
                 try:
                     stdout, stderr = self.vnt_process.communicate(timeout=1)
@@ -285,10 +291,10 @@ class VNTDaemon():
                         self.logger.write(f"CLI stderr: {stderr}", "error")
                 except Exception:
                     pass
-                
+
                 self.vnt_process = None
                 return False
-            
+
             threading.Thread(target=self._log_reader_thread, daemon=True).start()
             self.logger.write(f"Started vnt2_cli.exe with TOML config: {toml_config_path}", "info")
             return True
@@ -322,7 +328,7 @@ class VNTDaemon():
         try:
             cli_name = os.path.basename(self.vnt_cli_path)
             killed_count = 0
-            
+
             for proc in psutil.process_iter(['pid', 'name']):
                 try:
                     if proc.info['name'] and cli_name.lower() in proc.info['name'].lower():
@@ -330,27 +336,29 @@ class VNTDaemon():
                         if self.vnt_process and proc.info['pid'] == self.vnt_process.pid:
                             self.logger.write(f"Skipping our own managed process PID: {proc.info['pid']}", "debug")
                             continue
-                        
+
                         # This is an orphaned process, kill it
                         self.logger.write(f"Killing orphaned vnt2_cli.exe process PID: {proc.info['pid']}", "warning")
                         proc.terminate()
                         try:
                             proc.wait(timeout=3)
-                            self.logger.write(f"Successfully terminated orphaned process PID: {proc.info['pid']}", "info")
+                            self.logger.write(
+                                f"Successfully terminated orphaned process PID: {
+                                    proc.info['pid']}", "info")
                         except psutil.TimeoutExpired:
                             self.logger.write(f"Force killing orphaned process PID: {proc.info['pid']}", "warning")
                             proc.kill()
                             proc.wait()
                         killed_count += 1
-                        
+
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
-            
+
             if killed_count > 0:
                 self.logger.write(f"Cleaned up {killed_count} orphaned vnt2_cli.exe process(es)", "info")
                 # Give system time to clean up
                 time.sleep(1)
-                
+
         except Exception as e:
             self.logger.write(f"Error cleaning up orphaned CLI processes: {e}", "warning")
 
@@ -359,11 +367,11 @@ class VNTDaemon():
         if self.vnt_process and self.vnt_process.poll() is None:
             try:
                 self.logger.write(f"[DEBUG] Attempting to stop vnt-cli process (PID: {self.vnt_process.pid})", "info")
-                
+
                 # VNT 2.0不支持--stop命令，直接终止进程
                 self.logger.write(f"[DEBUG] Terminating vnt-cli process...", "info")
                 self.vnt_process.terminate()
-                
+
                 try:
                     # Wait for the process to terminate gracefully (up to 5 seconds)
                     self.logger.write(f"[DEBUG] Waiting for process to terminate (timeout=5s)...", "info")
@@ -418,7 +426,8 @@ class VNTDaemon():
                     if match.groups():
                         self.server_version = match.group(1)
                     else:
-                        self.server_version = line.split("server version=")[-1].strip() if "server version=" in line else "unknown"
+                        self.server_version = line.split(
+                            "server version=")[-1].strip() if "server version=" in line else "unknown"
                     payload["server_version"] = self.server_version
                 elif event_type == "reconnect_count":
                     count_match = re.search(r'connect count=(\d+)', line)
@@ -426,7 +435,9 @@ class VNTDaemon():
                         payload["connect_count"] = count_match.group(1)
                         count = int(count_match.group(1))
                         if count > self.MAX_RECONNECT_COUNT:
-                            self.logger.write(f"Reconnection count {count} exceeds {self.MAX_RECONNECT_COUNT}, restarting vnt_cli.exe", "info")
+                            self.logger.write(
+                                f"Reconnection count {count} exceeds {
+                                    self.MAX_RECONNECT_COUNT}, restarting vnt_cli.exe", "info")
                             # 重启 vnt_cli.exe
                             self.stop_vnt_cli_network()
                             # 等待一段时间再重启
@@ -474,7 +485,7 @@ class VNTDaemon():
 
     def _try_initial_auto_connect(self):
         """已废弃：此方法不再使用，自动连接逻辑已整合到 monitor_vnt_cli() 中
-        
+
         原来的实现有问题：即使启动失败也会设置标志位，导致后续不再重试。
         新的实现直接在监控循环中持续检查条件并尝试启动，不限制尝试次数。
         """
@@ -482,13 +493,13 @@ class VNTDaemon():
 
     def monitor_vnt_cli(self):
         self.logger.write("Monitoring vnt-cli process started...", "info")
-        
+
         # ⭐ Session 0 模式：服务启动后自动启用自动启动模式
         # 这样即使没有GUI，也会自动尝试连接
         if not self.gui_started_cli:
             self.auto_start_mode = True
             self.logger.write("[AUTO-MODE] Auto-start mode enabled for Session 0", "info")
-        
+
         while self.running:
             if self.vnt_process and self.vnt_process.poll() is None:
                 # vnt2_cli.exe 正在运行
@@ -500,26 +511,26 @@ class VNTDaemon():
                 time.sleep(2)
             else:
                 # vnt2_cli.exe 未运行，检查是否应该自动启动
-                
+
                 # ⭐ 关键：如果被用户手动关闭（Toggle Off），则不自动重启
                 if self.toggled_off:
                     self.logger.write("[MONITOR] VNT manually toggled off, skipping auto-start", "info")
                     self.virtual_ip = None
                     time.sleep(2)
                     continue
-                
+
                 # ⭐ Session 0 自动模式或 Session 1 GUI启动模式：检查条件并自动启动
                 should_autostart = self.auto_start_mode or self.gui_started_cli
-                
+
                 if not should_autostart:
                     # 既不是自动模式，也不是GUI启动模式，等待
                     time.sleep(2)
                     continue
-                
+
                 # 检查基本条件：网络和服务器连接
                 internet_ok = self.inet_monitor.is_connected()
                 server_ok = Internet_Connectivity_Monitor.is_server_connected()
-                
+
                 if not (internet_ok and server_ok):
                     # 网络或服务器不可用，等待后重试（Session 0 持续重试）
                     if not internet_ok:
@@ -528,21 +539,22 @@ class VNTDaemon():
                         self.logger.write("[AUTO-RETRY] Server not reachable, will retry...", "info")
                     time.sleep(5)  # 网络问题时等待5秒再重试
                     continue
-                
+
                 # 检查配置文件
                 vnt_conf = VNT_Config(self.working_dir, VNT_HELPER_CONFIG_FILE, self.logger)
                 config_path = vnt_conf.get_value(VNT_Config.KEY_VNT_CONNECTION_CONFIG_YAML)
                 has_valid_config = config_path and Path(config_path).exists()
-                
+
                 if not has_valid_config:
                     self.logger.write("[AUTO-RETRY] No valid config file found, will retry...", "info")
                     time.sleep(10)  # 配置文件缺失时等待更长时间
                     continue
-                
+
                 # ⭐ 所有条件满足，启动CLI
                 self.logger.write("[AUTO-RETRY] All conditions met, starting vnt-cli...", "info")
-                self.logger.write(f"[AUTO-RETRY] Mode: auto={self.auto_start_mode}, gui_started={self.gui_started_cli}", "info")
-                
+                self.logger.write(
+                    f"[AUTO-RETRY] Mode: auto={self.auto_start_mode}, gui_started={self.gui_started_cli}", "info")
+
                 success = self.start_vnt_cli()
                 if success:
                     self.logger.write("[AUTO-RETRY] Successfully started vnt-cli", "info")
@@ -571,7 +583,7 @@ class VNTDaemon():
                     with self.gui_connection_lock:
                         self.gui_connections.add(conn)
                         self.logger.write(f"[GUI TRACK] New GUI connection. Total: {len(self.gui_connections)}", "info")
-                    
+
                     if self.gui_event_conn:
                         try:
                             self.gui_event_conn.close()
@@ -634,7 +646,10 @@ class VNTDaemon():
                     self.toggled_off = False
                     if not self.auto_start_mode:
                         self.gui_started_cli = True
-                    self.logger.write(f"[DEBUG] Restart completed, gui_started_cli={self.gui_started_cli}, auto_start_mode={self.auto_start_mode}", "info")
+                    self.logger.write(
+                        f"[DEBUG] Restart completed, gui_started_cli={
+                            self.gui_started_cli}, auto_start_mode={
+                            self.auto_start_mode}", "info")
 
                 resp = {"status": "ok"} if success else {"status": "error", "msg": "restart failed"}
                 self.logger.write(f"[DEBUG] Sending response: {resp}", "info")
@@ -644,7 +659,13 @@ class VNTDaemon():
             elif cmd["cmd"] == "status":
                 self.logger.write(f"[DEBUG] Processing 'status' command", "info")
                 running = "yes" if self.vnt_process is not None and self.vnt_process.poll() is None else "no"
-                status_data = {"status": "ok", "running": running, "virtual_ip": self.virtual_ip, "version": self.ver, "serial": self.serial, "server_version": self.server_version}
+                status_data = {
+                    "status": "ok",
+                    "running": running,
+                    "virtual_ip": self.virtual_ip,
+                    "version": self.ver,
+                    "serial": self.serial,
+                    "server_version": self.server_version}
                 self.logger.write(f"[DEBUG] Status data: {status_data}", "info")
                 conn.send(json.dumps(status_data).encode())
                 self.logger.write(f"[DEBUG] Status response sent", "info")
@@ -654,13 +675,13 @@ class VNTDaemon():
                 # ⭐ 关键逻辑：根据启动模式决定是否停止CLI
                 # Session 1 GUI模式（gui_started_cli=True）：退出时停止CLI
                 # Session 0 服务模式（auto_start_mode=True）：退出时不停止CLI
-                
+
                 if self.gui_started_cli and not self.toggled_off:
                     # Session 1: GUI启动的CLI，退出时应该停止
                     self.logger.write(f"[DEBUG] GUI exit in Session 1 mode - stopping vnt2_cli.exe", "info")
                     success = self.stop_vnt_cli_network()
                     self.logger.write(f"[DEBUG] stop_vnt_cli_network() returned: {success}", "info")
-                    
+
                     if self.vnt_process:
                         self.logger.write(f"[DEBUG] Waiting for vnt_process to terminate (timeout=5s)...", "info")
                         try:
@@ -668,23 +689,25 @@ class VNTDaemon():
                             self.logger.write(f"[DEBUG] vnt_process terminated successfully", "info")
                         except Exception as e:
                             self.logger.write(f"[DEBUG] vnt_process wait timeout or error: {e}", "warning")
-                    
+
                     # 重置状态
                     self.gui_started_cli = False
                     self.toggled_off = True
                 else:
                     # Session 0 或已手动停止：只断开连接，不停止CLI
-                    self.logger.write(f"[DEBUG] GUI exit in Session 0 mode or already stopped - keeping daemon running", "info")
+                    self.logger.write(
+                        f"[DEBUG] GUI exit in Session 0 mode or already stopped - keeping daemon running", "info")
                     success = True
-                
+
                 self.logger.write(f"[DEBUG] Sending exit confirmation (daemon stays running)", "info")
                 conn.send(json.dumps({"status": "ok", "msg": "vnt2_cli.exe handled, daemon remains running"}).encode())
                 self.logger.write(f"[DEBUG] Exit confirmation sent", "info")
 
             elif cmd["cmd"] == "shutdown_daemon":
                 # ⭐ 新增命令：完全关闭守护进程（用于重置操作）
-                self.logger.write(f"[DEBUG] Processing 'shutdown_daemon' command - full daemon shutdown requested", "info")
-                
+                self.logger.write(
+                    f"[DEBUG] Processing 'shutdown_daemon' command - full daemon shutdown requested", "info")
+
                 # 1. 先停止CLI
                 if self.vnt_process and self.vnt_process.poll() is None:
                     self.logger.write(f"[DEBUG] Stopping vnt2_cli.exe before daemon shutdown...", "info")
@@ -694,19 +717,19 @@ class VNTDaemon():
                         self.logger.write(f"[DEBUG] vnt2_cli.exe stopped", "info")
                     except Exception as e:
                         self.logger.write(f"[DEBUG] Error waiting for CLI: {e}", "warning")
-                
+
                 # 2. 发送确认响应
                 self.logger.write(f"[DEBUG] Sending shutdown confirmation", "info")
                 conn.send(json.dumps({"status": "ok", "msg": "daemon shutting down"}).encode())
-                
+
                 # 3. 设置退出标志，守护进程将在主循环中退出
                 self.logger.write(f"[DEBUG] Setting running=False to trigger daemon shutdown", "info")
                 self.running = False
-                
+
                 # 4. 关闭IPC连接
                 try:
                     conn.close()
-                except:
+                except BaseException:
                     pass
             else:
                 conn.send(json.dumps({"status": "error", "msg": "unknown command"}).encode())
@@ -717,7 +740,8 @@ class VNTDaemon():
             with self.gui_connection_lock:
                 if conn in self.gui_connections:
                     self.gui_connections.discard(conn)
-                    self.logger.write(f"[GUI TRACK] Connection removed (JSON error). Remaining: {len(self.gui_connections)}", "info")
+                    self.logger.write(
+                        f"[GUI TRACK] Connection removed (JSON error). Remaining: {len(self.gui_connections)}", "info")
             conn.close()
         except Exception as e:
             self.logger.write(f"[DEBUG] IPC exception caught: {type(e).__name__}: {e}", "critical")
@@ -728,7 +752,8 @@ class VNTDaemon():
                 with self.gui_connection_lock:
                     if conn in self.gui_connections:
                         self.gui_connections.discard(conn)
-                        self.logger.write(f"[GUI TRACK] Connection removed (exception). Remaining: {len(self.gui_connections)}", "info")
+                        self.logger.write(
+                            f"[GUI TRACK] Connection removed (exception). Remaining: {len(self.gui_connections)}", "info")
                 self.logger.write(f"[DEBUG] Closing connection due to error", "info")
                 conn.close()
         finally:
@@ -737,64 +762,75 @@ class VNTDaemon():
                 if conn in self.gui_connections:
                     self.gui_connections.discard(conn)
                     remaining = len(self.gui_connections)
-                    self.logger.write(f"[GUI TRACK] Connection handler exited. Remaining GUI connections: {remaining}", "info")
-                    
+                    self.logger.write(
+                        f"[GUI TRACK] Connection handler exited. Remaining GUI connections: {remaining}", "info")
+
                     # ⭐ 关键逻辑：只有当所有GUI都断开，且CLI是由GUI启动的，才停止CLI
                     # 这确保了：
                     # - Session 0 模式（auto_start_mode=True）：GUI断开不影响CLI运行
                     # - Session 1 模式（gui_started_cli=True）：最后一个GUI断开时停止CLI
-                    
-                    if (remaining == 0 and 
-                        self.vnt_process and 
+
+                    if (remaining == 0 and
+                        self.vnt_process and
                         self.vnt_process.poll() is None and
                         self.gui_started_cli and
-                        not self.toggled_off):
-                        
-                        self.logger.write("[GUI TRACK] All GUI clients disconnected AND CLI was started by GUI.", "info")
+                            not self.toggled_off):
+
+                        self.logger.write(
+                            "[GUI TRACK] All GUI clients disconnected AND CLI was started by GUI.", "info")
                         self.logger.write("[GUI TRACK] Stopping vnt2_cli.exe as per Session 1 behavior...", "info")
                         self.stop_vnt_cli_network()
                         self.toggled_off = True
                         self.gui_started_cli = False
-                    
+
                     elif remaining == 0:
                         # 其他情况：只记录日志，不改变CLI状态
                         if self.auto_start_mode:
-                            self.logger.write("[GUI TRACK] All GUI disconnected in Session 0 mode - keeping CLI running", "info")
+                            self.logger.write(
+                                "[GUI TRACK] All GUI disconnected in Session 0 mode - keeping CLI running", "info")
                         elif self.toggled_off:
-                            self.logger.write("[GUI TRACK] All GUI disconnected but CLI already stopped by user", "info")
+                            self.logger.write(
+                                "[GUI TRACK] All GUI disconnected but CLI already stopped by user", "info")
                         else:
                             self.logger.write("[GUI TRACK] All GUI disconnected, CLI state unchanged", "info")
-            
+
             self.logger.write(f"[DEBUG] ===== IPC Command Handler Exited =====", "info")
 
     def ipc_server_loop(self):
         max_retries = 5
         retry_delay = 1  # 秒
-        
+
         for attempt in range(max_retries):
             try:
                 self.ipc_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.ipc_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                self.logger.write(f"[DEBUG] Attempting to bind IPC server to {IPC_HOST}:{self.IPC_PORT} (attempt {attempt + 1}/{max_retries})", "info")
+                self.logger.write(
+                    f"[DEBUG] Attempting to bind IPC server to {IPC_HOST}:{
+                        self.IPC_PORT} (attempt {
+                        attempt + 1}/{max_retries})", "info")
                 self.ipc_server.bind((IPC_HOST, self.IPC_PORT))
                 self.ipc_server.listen(5)
                 self.logger.write(f"IPC server listening on {IPC_HOST}:{self.IPC_PORT}", "info")
-                
+
                 # 设置一个标志，表示IPC服务器已就绪
                 self.ipc_ready = True
                 self.logger.write(f"[DEBUG] IPC server is ready", "info")
                 break  # 成功绑定，退出重试循环
-                
+
             except OSError as e:
                 if e.errno == 10048:  # WSAEADDRINUSE - 端口已被占用
-                    self.logger.write(f"[DEBUG] Port {self.IPC_PORT} is already in use (attempt {attempt + 1}/{max_retries})", "warning")
+                    self.logger.write(
+                        f"[DEBUG] Port {
+                            self.IPC_PORT} is already in use (attempt {
+                            attempt + 1}/{max_retries})",
+                        "warning")
                     if attempt < max_retries - 1:
                         self.logger.write(f"[DEBUG] Waiting {retry_delay} seconds before retry...", "info")
                         time.sleep(retry_delay)
                         # 关闭失败的socket
                         try:
                             self.ipc_server.close()
-                        except:
+                        except BaseException:
                             pass
                     else:
                         self.logger.write(f"[DEBUG] Failed to bind port after {max_retries} attempts", "critical")
@@ -803,7 +839,9 @@ class VNTDaemon():
                     self.logger.write(f"[DEBUG] Socket error during bind: {e}", "critical")
                     raise
             except Exception as e:
-                self.logger.write(f"[DEBUG] Unexpected error during IPC server setup: {type(e).__name__}: {e}", "critical")
+                self.logger.write(
+                    f"[DEBUG] Unexpected error during IPC server setup: {
+                        type(e).__name__}: {e}", "critical")
                 import traceback
                 self.logger.write(f"[DEBUG] Traceback:\n{traceback.format_exc()}", "critical")
                 raise
@@ -863,25 +901,25 @@ class VNTDaemon():
         kill_process(VNT_CLI)
 
         self.logger.write("VNT Daemon starting...", "info")
-        
+
         # 初始化IPC就绪标志
         self.ipc_ready = False
-        
+
         # 启动IPC服务器线程
         ipc_thread = threading.Thread(target=self.ipc_server_loop, daemon=True)
         ipc_thread.start()
-        
+
         # 等待IPC服务器就绪（最多等待2秒）
         wait_count = 0
         while not self.ipc_ready and wait_count < 20:
             time.sleep(0.1)
             wait_count += 1
-        
+
         if self.ipc_ready:
             self.logger.write("IPC server is ready", "info")
         else:
             self.logger.write("Warning: IPC server may not be fully ready", "warning")
-        
+
         # 启动监控线程
         threading.Thread(target=self.monitor_vnt_cli, daemon=True).start()
 
@@ -933,7 +971,7 @@ class VNT_Logger():
 
             if not logger.handlers:
                 handler = logging.handlers.RotatingFileHandler(
-                    vnt_log_full_path_fn, maxBytes=1024*1024, backupCount=3
+                    vnt_log_full_path_fn, maxBytes=1024 * 1024, backupCount=3
                 )
                 formatter = logging.Formatter('%(asctime)s - %(levelname)-8s - %(message)s')
                 handler.setFormatter(formatter)
@@ -961,12 +999,12 @@ class VNT_Logger():
             "tunnel TCP-Some",         # 隧道连接建立
             "drop tunnel",             # 隧道连接断开
         ]
-        
+
         # 检查是否包含任何需要过滤的关键词
         for keyword in filter_keywords:
             if keyword in txt:
                 return  # 直接跳过，不写入日志
-        
+
         current_pid = os.getpid()
         full_txt = f"PID {current_pid:<6} : {txt}"
         current_time = datetime.now()

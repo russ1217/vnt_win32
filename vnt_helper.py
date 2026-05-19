@@ -61,7 +61,15 @@ VNT_SERVICE_EXE = "vnt_service.exe"
 VNT_HELPER_ICON = 'vnt_helper.ico'
 VNT_CTRL_EXE = "vnt2_ctrl.exe"  # VNT 2.0 控制工具
 
-RESOURCE_FILE_NAMES = [VNT_CLIENT_NAME, VNT_CTRL_EXE, VNT_SERVICE_EXE, WIN_TUNE_DLL, VNT_CONFIG_TEMPLATE_FILE, VNT_CONFIG_ALL_FILE, VNT_TRAY_ICON, VNT_HELPER_ICON]
+RESOURCE_FILE_NAMES = [
+    VNT_CLIENT_NAME,
+    VNT_CTRL_EXE,
+    VNT_SERVICE_EXE,
+    WIN_TUNE_DLL,
+    VNT_CONFIG_TEMPLATE_FILE,
+    VNT_CONFIG_ALL_FILE,
+    VNT_TRAY_ICON,
+    VNT_HELPER_ICON]
 DEFAULT_LANG = 'en'  # 或 'zh_CN' 默认语言（可从配置、系统或用户选择读取）
 
 _ = None
@@ -122,7 +130,8 @@ class VNT_Helper_App():
         self._clear_existing_process(os.path.split(sys.argv[0])[1], self.args.no_gui)
 
         self._deploy_resource_files(RESOURCE_FILE_NAMES)
-        self.reg_task_autorun = Registry_Taskschedule_for_AutoRun(self, self.workingdir, self.logger, self.args.no_gui, self.args.debug, self.args.kill)
+        self.reg_task_autorun = Registry_Taskschedule_for_AutoRun(
+            self, self.workingdir, self.logger, self.args.no_gui, self.args.debug, self.args.kill)
 
         self.main_gui_app = None
         self.main_window = None
@@ -188,12 +197,21 @@ class VNT_Helper_App():
                 can_clean_processes = True
 
                 if not background_run and self.args.kill is False:
-                    t = _("There are ") + str(num - 2) + _(" of ") + exe_nm + _(" session(s) already running\n") + _("Start New Sessions?")
-                    can_clean_processes = (win32api.MessageBox(0, t, _("Status"),  win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) == win32con.IDYES)
+                    t = _("There are ") + str(num - 2) + _(" of ") + exe_nm + \
+                        _(" session(s) already running\n") + _("Start New Sessions?")
+                    can_clean_processes = (
+                        win32api.MessageBox(
+                            0,
+                            t,
+                            _("Status"),
+                            win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) == win32con.IDYES)
 
                 if not can_clean_processes:
                     try:
-                        shutil.copy(os.path.join(self.workingdir, self.PID_FILE_BACKUP), os.path.join(self.workingdir, self.PID_FILE))
+                        shutil.copy(
+                            os.path.join(
+                                self.workingdir, self.PID_FILE_BACKUP), os.path.join(
+                                self.workingdir, self.PID_FILE))
                         os.remove(os.path.join(self.workingdir, self.PID_FILE_BACKUP))
                     except Exception as e:
                         self.logger(f"Error restor backgup pid file {e}")
@@ -297,7 +315,8 @@ class VNT_Helper_App():
     def _get_working_dir(self):
 
         if getattr(sys, 'frozen', False):
-            curpath = os.path.dirname(sys.executable)   # EXE path, in case autorun with REGISTRY, it becomes WINDOWS\SYSTEM32
+            # EXE path, in case autorun with REGISTRY, it becomes WINDOWS\SYSTEM32
+            curpath = os.path.dirname(sys.executable)
         elif __file__:
             curpath = os.path.dirname(os.path.abspath(__file__))
 
@@ -316,19 +335,55 @@ class VNT_Helper_App():
         -v, --version           get version information'''
 
         parser = ArgumentParser()
-        parser.add_argument("-d", "--debug", help="set DEBUG mode, with console shown", action="store_true", dest="debug", default=False)
-        parser.add_argument("-b", "--background", help="run in background", action="store_true", dest="no_gui", default=False)
-        parser.add_argument("-u", "--update", help="update VNT helper and associate programs", action="store_true", dest="update", default=False)
-        parser.add_argument("-k", "--kill", help="kill the VNT process", action="store_true", dest="kill", default=False)
-        parser.add_argument("-v", "--version", help="get version information", action="store_true", dest="version", default=False)
+        parser.add_argument(
+            "-d",
+            "--debug",
+            help="set DEBUG mode, with console shown",
+            action="store_true",
+            dest="debug",
+            default=False)
+        parser.add_argument(
+            "-b",
+            "--background",
+            help="run in background",
+            action="store_true",
+            dest="no_gui",
+            default=False)
+        parser.add_argument(
+            "-u",
+            "--update",
+            help="update VNT helper and associate programs",
+            action="store_true",
+            dest="update",
+            default=False)
+        parser.add_argument(
+            "-k",
+            "--kill",
+            help="kill the VNT process",
+            action="store_true",
+            dest="kill",
+            default=False)
+        parser.add_argument(
+            "-v",
+            "--version",
+            help="get version information",
+            action="store_true",
+            dest="version",
+            default=False)
 
         args = parser.parse_args()
 
         if args.version is True:
             print(self.current_version)
             if not args.no_gui:
-                win32api.MessageBox(0, _("VNT Helper Version {version}").format(version=self.current_version) + '\n' + HELP_TXT,
-                                    _("Information"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+                win32api.MessageBox(
+                    0,
+                    _("VNT Helper Version {version}").format(
+                        version=self.current_version) +
+                    '\n' +
+                    HELP_TXT,
+                    _("Information"),
+                    win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
             sys.exit(0)
 
         return args
@@ -348,7 +403,8 @@ class VNT_Helper_App():
             try:
                 _logger = VNT_Logger(workingdir, fn, False, self.args.debug)
             except Exception as e:
-                win32api.MessageBox(0, f"{e}", "LOGGER ERROR", win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+                win32api.MessageBox(0, f"{e}", "LOGGER ERROR", win32con.MB_OK |
+                                    win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
                 sys.exit(0)
 
         return _logger
@@ -371,7 +427,8 @@ class VNT_Helper_App():
 
         try:
             vnt_config_file = vnt_conf.get_value(VNT_Config.KEY_VNT_CONNECTION_CONFIG_YAML)
-            start_GUI(not (vnt_config_file is not None and os.path.exists(vnt_config_file)), self.args.update)  # Not showing configuration main window
+            start_GUI(not (vnt_config_file is not None and os.path.exists(vnt_config_file)),
+                      self.args.update)  # Not showing configuration main window
 
         except Exception as e:
             self.logger.write(f"Main GUI loop {e}", 'critical')
@@ -391,7 +448,10 @@ class VNT_Helper_App():
                     self.PIDs.append(pid[i])
                     vnt_pid.set_value(str(i), pid[i])
             else:
-                shutil.copy(os.path.join(self.workingdir, self.PID_FILE), os.path.join(self.workingdir, self.PID_FILE_BACKUP))
+                shutil.copy(
+                    os.path.join(
+                        self.workingdir, self.PID_FILE), os.path.join(
+                        self.workingdir, self.PID_FILE_BACKUP))
                 last_PIDs = []
                 for i in range(last_total_num_of_pid):
                     last_PIDs.append(vnt_pid.get_value(str(i)))
@@ -448,7 +508,8 @@ class VNT_Helper_App():
             sys.exit(0)
 
     def _process_exit_signal(self):
-        if not os.path.exists(os.path.join(self.workingdir, self.PID_FILE)):  # in case deleted by earler vnt_helper on EXIT request from this vnt_helper
+        if not os.path.exists(os.path.join(self.workingdir, self.PID_FILE)
+                              ):  # in case deleted by earler vnt_helper on EXIT request from this vnt_helper
             if self._process_PID("set"):
                 self.logger.write(f"Re-establish {self.PID_FILE}")
 
@@ -976,7 +1037,7 @@ class VNT_Connection():
             ip = event.get("ip", "unknown")
             self.virtual_IP = ip
             self.logger.write(f"[IPC] IP Assigned. Virtual IP: {self.virtual_IP}", 'debug')
-            
+
             # 当IP分配时，如果已连接但未通知，立即显示通知
             if not self._connected_notified and self.vnt_app.bubble_msg_handler is not None and self.vnt_app.args.no_gui is False:
                 self.vnt_app.bubble_msg_handler.msg(f"Connected#{self.VIRTUAL_IP_TEXT}{self.virtual_IP}")
@@ -990,7 +1051,7 @@ class VNT_Connection():
                 if resp.get("status") == "ok":
                     self.virtual_IP = resp.get("virtual_ip")
                     self.logger.write(f"[IPC] Get Virtual IP from Daemon: {self.virtual_IP}")
-            
+
             # 如果已有IP但未通知，显示通知
             if not self._connected_notified and self.vnt_app.bubble_msg_handler is not None and self.virtual_IP is not None and self.vnt_app.args.no_gui is False:
                 self.vnt_app.bubble_msg_handler.msg(f"Connected#{self.VIRTUAL_IP_TEXT}{self.virtual_IP}")
@@ -1026,14 +1087,16 @@ class VNT_Connection():
             """Initialize VNT daemon with retry logic for robustness"""
             max_retries = 3
             retry_delay = 2  # seconds
-            
+
             for attempt in range(max_retries):
                 try:
-                    self.logger.write(f"Attempting to initialize VNT daemon (attempt {attempt + 1}/{max_retries})...", 'info')
-                    
+                    self.logger.write(
+                        f"Attempting to initialize VNT daemon (attempt {
+                            attempt + 1}/{max_retries})...", 'info')
+
                     # First, check if daemon is already running
                     resp = self._send_ipc_command({"cmd": "status"}, timeout=3)
-                    
+
                     if resp.get("status") == "ok" and resp.get("running") == "yes":
                         # Daemon is already running, check virtual IP
                         ip = resp.get("virtual_ip")
@@ -1050,17 +1113,17 @@ class VNT_Connection():
                                 raise RuntimeError(f"Daemon restart failed: {resp.get('msg', 'unknown')}")
                             self.logger.write("Daemon restarted successfully", 'info')
                             return True
-                    
+
                     else:
                         # Daemon not running, start it
                         if not self.toggled_off:
                             self.logger.write("Daemon not running, sending start command...", 'info')
                             resp = self._send_ipc_command({"cmd": "start"}, timeout=5)
-                            
+
                             if resp.get("status") != "ok":
                                 error_msg = resp.get('msg', 'unknown')
                                 self.logger.write(f"Daemon start command failed: {error_msg}", 'warning')
-                                
+
                                 # If this is not the last attempt, wait and retry
                                 if attempt < max_retries - 1:
                                     self.logger.write(f"Retrying in {retry_delay} seconds...", 'info')
@@ -1075,10 +1138,10 @@ class VNT_Connection():
                             # User has toggled off, don't start
                             self.stop_vnt_network()
                             return True
-                            
+
                 except Exception as e:
                     self.logger.write(f"Initialize vnt daemon error (attempt {attempt + 1}): {e}", 'warning')
-                    
+
                     # If this is not the last attempt, wait and retry
                     if attempt < max_retries - 1:
                         self.logger.write(f"Retrying in {retry_delay} seconds...", 'info')
@@ -1087,7 +1150,7 @@ class VNT_Connection():
                         # Last attempt failed
                         self.logger.write(f"Failed to initialize VNT daemon after {max_retries} attempts", 'critical')
                         return False
-            
+
             return False
 
         vnt_config_file = None
@@ -1095,11 +1158,14 @@ class VNT_Connection():
 
         while vnt_config_file is None or (not os.path.exists(vnt_config_file)):
             try:
-                vnt_config_file = vnt_conf.get_value(VNT_Config.KEY_VNT_CONNECTION_CONFIG_YAML, False)  # Do not write log here to prevent log spam
+                vnt_config_file = vnt_conf.get_value(
+                    VNT_Config.KEY_VNT_CONNECTION_CONFIG_YAML,
+                    False)  # Do not write log here to prevent log spam
                 if vnt_config_file is None or (not os.path.exists(vnt_config_file)):
                     # First run and vnt_service exists from other copies of vnt_helper, uninstall it
                     if self.vnt_app.is_service_installed(False):  # Do not write log here to prevent log spam
-                        self.logger.write("VNT daemon service exists from other vnt_helper copies, uninstalling first...", 'info')
+                        self.logger.write(
+                            "VNT daemon service exists from other vnt_helper copies, uninstalling first...", 'info')
 
                         if self.vnt_app.get_service_status() == "RUNNING":
                             resp = self.vnt_app.vnt_connection._send_ipc_command({"cmd": "exit"})
@@ -1159,7 +1225,7 @@ class VNT_Connection():
                         # The daemon needs time to start up and begin listening on the IPC port
                         self.logger.write("Service started, waiting for daemon initialization...", 'info')
                         time.sleep(3)  # Give daemon time to initialize IPC listener
-                        
+
                         # Verify service is actually running before proceeding
                         if self.vnt_app.is_service_running(False):
                             initialize_vnt_daemon()
@@ -1180,7 +1246,8 @@ class VNT_Connection():
             while not self.vnt_app.is_service_running(False) or not self.connection_profile_ready:
                 #                        ^                                         ^
                 #                        |                                         |
-                #                  avoid log spam                   only proceed when connection profile is ready on first run
+                # avoid log spam                   only proceed when connection profile is
+                # ready on first run
                 if not self.running:
                     return
                 time.sleep(0.1)
@@ -1235,8 +1302,9 @@ class VNT_Connection():
 
     def stop_vnt_network(self):
         """仅通知 daemon 关闭网络（Toggle OFF 或退出前调用）"""
-        self.logger.write(f"stop_vnt_network() called - toggled_off={self.toggled_off}, running={self.running}", "debug")
-        
+        self.logger.write(
+            f"stop_vnt_network() called - toggled_off={self.toggled_off}, running={self.running}", "debug")
+
         # 只要还在运行，就发送停止命令（不检查 toggled_off 状态）
         if self.running:
             try:
@@ -1254,11 +1322,11 @@ class VNT_Connection():
         """停止 VNT 网络连接（GUI 退出时调用）"""
         self.logger.write("VNT_Connection.stop() called - GUI is exiting", "info")
         self.running = False
-        
+
         if self.vnt_comm_thread:
             # GUI 退出时必须停止 vnt2_cli.exe，但保持守护进程运行
             self.logger.write("GUI exiting, sending stop_network command to daemon...", "info")
-            
+
             # 直接发送 stop_network 命令，不检查状态
             try:
                 resp = self._send_ipc_command({"cmd": "stop_network"}, timeout=3)
@@ -1270,7 +1338,7 @@ class VNT_Connection():
             except Exception as e:
                 self.logger.write(f"Failed to send stop_network command: {e}", "warning")
                 self.logger.write("This may be because IPC connection is already closed", "warning")
-            
+
             # 等待通信线程结束
             self.vnt_comm_thread.join(timeout=2)
             self.logger.write("VNT connection communication thread stopped.")
@@ -1322,7 +1390,7 @@ class VNT_Logger():
 
             if not logger.handlers:
                 handler = logging.handlers.RotatingFileHandler(
-                    vnt_log_full_path_fn, maxBytes=1024*1024, backupCount=3
+                    vnt_log_full_path_fn, maxBytes=1024 * 1024, backupCount=3
                 )
                 formatter = logging.Formatter('%(asctime)s - %(levelname)-8s - %(message)s')
                 handler.setFormatter(formatter)
@@ -1352,12 +1420,12 @@ class VNT_Logger():
                 "tunnel TCP-Some",         # 隧道连接建立
                 "drop tunnel",             # 隧道连接断开
             ]
-            
+
             # 检查是否包含任何需要过滤的关键词
             for keyword in filter_keywords:
                 if keyword in txt:
                     return  # 直接跳过，不写入日志
-        
+
         current_pid = os.getpid()
         full_txt = f"PID {current_pid:<6} : {txt}"
         current_time = datetime.now()
@@ -1559,7 +1627,8 @@ class VNT_Main_Window(wx.Frame):
         win_width = scale(670)
         win_height = scale(530)
 
-        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=_("VNT Setting"), pos=wx.DefaultPosition, size=wx.Size(win_width, win_height), style=wx.CAPTION | wx.STATIC_BORDER | wx.TAB_TRAVERSAL)
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=_("VNT Setting"), pos=wx.DefaultPosition,
+                          size=wx.Size(win_width, win_height), style=wx.CAPTION | wx.STATIC_BORDER | wx.TAB_TRAVERSAL)
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
         self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_SCROLLBAR))
@@ -1631,7 +1700,6 @@ class VNT_Main_Window(wx.Frame):
         self.Protocol.SetSelection(0)
         col4.Add(self.Protocol, 1, wx.TOP | wx.BOTTOM | wx.EXPAND, scale(5))
         hSizer_row2.Add(col4, 1, wx.EXPAND | wx.RIGHT, HORIZONTAL_GAP)
-
 
         col5 = wx.BoxSizer(wx.VERTICAL)
         self.m_staticText11 = wx.StaticText(panel, wx.ID_ANY, _("Compression"), style=wx.ALIGN_LEFT)
@@ -1736,7 +1804,11 @@ class VNT_Main_Window(wx.Frame):
         self.m_staticText12.Wrap(-1)
         bSizer1.Add(self.m_staticText12, 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_HORIZONTAL, scale(5))
 
-        self.Advanced = wx.Button(panel, wx.ID_ANY, _("Manually edit yaml file setting for VNT (Advanced User Only) ..."), style=wx.BU_EXACTFIT)
+        self.Advanced = wx.Button(
+            panel,
+            wx.ID_ANY,
+            _("Manually edit yaml file setting for VNT (Advanced User Only) ..."),
+            style=wx.BU_EXACTFIT)
         self.Advanced.Enabled = False
         bSizer1.Add(self.Advanced, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, LEFT_MARGIN)
 
@@ -1918,10 +1990,12 @@ class VNT_Main_Window(wx.Frame):
         pwd = self.Network_Password.GetValue()
         if len(pwd) < 8:
             self.help_msg.SetForegroundColour("BLACK")
-            self.help_msg.Label = _("Default AES128-GCM encryption when password length < 8, or your choice of E2E encryption")
+            self.help_msg.Label = _(
+                "Default AES128-GCM encryption when password length < 8, or your choice of E2E encryption")
         else:
             self.help_msg.SetForegroundColour("BLACK")
-            self.help_msg.Label = _("Default AES256-GCM encryption when password length >= 8, or your choice of E2E encryption")
+            self.help_msg.Label = _(
+                "Default AES256-GCM encryption when password length >= 8, or your choice of E2E encryption")
 
     def on_text_config_name(self, event):
 
@@ -1972,7 +2046,8 @@ class VNT_Main_Window(wx.Frame):
         self.help_msg.Label = _("Nodes with different encryption CANNOT connect!")
         self.Refresh()
         m = _("1. All nodes must use the same encryption method.\n2. Encryption method is NONE if password is empty.\n3. Default is AES_GCM.")
-        win32api.MessageBox(0, m, _("Information on Client Encryption"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+        win32api.MessageBox(0, m, _("Information on Client Encryption"), win32con.MB_OK |
+                            win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
 
         event.Skip()
 
@@ -2051,7 +2126,8 @@ class VNT_Main_Window(wx.Frame):
 
         t = _("Are you sure to \n(1) OVERWRITE the settings\n(2) RECONNECT to virtual network?")
 
-        if win32api.MessageBox(0, t, _("Confirmation"), win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) != win32con.IDYES:
+        if win32api.MessageBox(0, t, _("Confirmation"), win32con.MB_YESNO |
+                               win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) != win32con.IDYES:
             return
 
         vnt_conf.set_value(VNT_Config.KEY_VNT_NOTIFICATION_ENABLED, self.Notification.GetValue())
@@ -2098,7 +2174,8 @@ class VNT_Main_Window(wx.Frame):
 
         t = _("Are you sure to \n(1) OVERWRITE the settings\n(2) RECONNECT to virtual network?")
 
-        if win32api.MessageBox(0, t, _("Confirmation"), win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) != win32con.IDYES:
+        if win32api.MessageBox(0, t, _("Confirmation"), win32con.MB_YESNO |
+                               win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) != win32con.IDYES:
             return
 
         vnt_conf.set_value(VNT_Config.KEY_VNT_NOTIFICATION_ENABLED, self.Notification.GetValue())
@@ -2112,21 +2189,31 @@ class VNT_Main_Window(wx.Frame):
 
         if not vnt_conf.set_value(VNT_Config.KEY_VNT_CONNECTION_CONFIG_YAML, fn):
             self.logger.write(f"Error writing {self.config_fn}", "critical")
-            win32api.MessageBox(0, _("Error Updating VNT config"), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(0, _("Error Updating VNT config"), _("Status"), win32con.MB_OK |
+                                win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
             return
 
         if self._write_vnt_connection_config():
             self.logger.write(f"Connection profile {self.config_fn} established")
 
-            if VNT_ManageProfile_Frame.update_profile_list(os.path.join(self.workingdir, self.config_fn), VNT_Config.KEY_VNT_PROFILE_LIST, self.ConfigName.GetValue(), 'add'):
+            if VNT_ManageProfile_Frame.update_profile_list(
+                    os.path.join(
+                        self.workingdir,
+                        self.config_fn),
+                    VNT_Config.KEY_VNT_PROFILE_LIST,
+                    self.ConfigName.GetValue(),
+                    'add'):
                 self.logger.write(f"Profile list updated with {self.ConfigName.GetValue()}")
             else:
-                self.logger.write(f"Error updating profile list with {self.ConfigName.GetValue()}, probably already exists", "debug")
+                self.logger.write(
+                    f"Error updating profile list with {
+                        self.ConfigName.GetValue()}, probably already exists", "debug")
 
             if self.vnt_app.vnt_connection.is_toggled_off():
                 self.vnt_app.bubble_msg_handler.msg("Attention#VNT connection currently toggled off")
         else:
-            win32api.MessageBox(0, _("Error establishing connection profile"), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(0, _("Error establishing connection profile"), _("Status"),
+                                win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
             return
 
         self.Hide()
@@ -2141,7 +2228,8 @@ class VNT_Main_Window(wx.Frame):
         event.Skip()
 
     def help_token(self, event):
-        self.help_msg.Label = _("Token needs to be registered in your server. Nodes with same token form a virtual LAN.")
+        self.help_msg.Label = _(
+            "Token needs to be registered in your server. Nodes with same token form a virtual LAN.")
         event.Skip()
 
     def help_ID(self, event):
@@ -2158,14 +2246,16 @@ class VNT_Main_Window(wx.Frame):
 
     def help_password(self, event):
         self.help_msg.SetForegroundColour("BLACK")
-        self.help_msg.Label = _("Password for end-to-end encryption, NOT for connection with server. Leave blank for no encryption.")
+        self.help_msg.Label = _(
+            "Password for end-to-end encryption, NOT for connection with server. Leave blank for no encryption.")
         event.Skip()
 
     def _advanced_yaml_edit(self, event):
 
         fn = os.path.join(self.workingdir, self.ConfigName.GetValue() + ".yaml")
 
-        t = "Connection profile established before advanced editing" if self._write_vnt_connection_config() else "Error establishing connection profile before advanced editing"
+        t = "Connection profile established before advanced editing" if self._write_vnt_connection_config(
+        ) else "Error establishing connection profile before advanced editing"
         self.logger.write(t)
 
         self.vnt_yaml_editor = VNT_YamlConfigEditor_Window(self, fn)
@@ -2214,7 +2304,7 @@ class VNT_Main_Window(wx.Frame):
             'wss': 'wss://',
             'dynamic': 'dynamic://'
         }
-        
+
         selected_protocol = self.Protocol.GetString(self.Protocol.GetSelection()).lower()
         server_prefix = protocol_mapping.get(selected_protocol, 'quic://')
 
@@ -2288,24 +2378,24 @@ class VNT_Main_Window(wx.Frame):
             # VNT2 字段：network_code（优先）或 token（向后兼容）
             network_code = data.get('network_code') or data.get('token', '')
             self.Token.SetValue(network_code)
-            
+
             self.DeviceID.SetValue(data.get('device_id', ''))
             self.Network_Password.SetValue(data.get('password', ''))
-            
+
             # VNT2 server 格式可能是字符串或数组（TOML要求数组，YAML可以是字符串）
             # 向后兼容：如果没有 server 字段，尝试从 server_address 读取
             server_data = data.get('server') or data.get('server_address', '')
-            
+
             # 如果 server 是数组，取第一个元素
             if isinstance(server_data, list):
                 server_address = server_data[0] if len(server_data) > 0 else ''
             else:
                 server_address = server_data
-            
+
             if isinstance(server_address, str) and '://' in server_address:
                 service_address_port = server_address.split("://")[1].strip()
                 protocol_prefix = server_address.split("://")[0].strip().lower()
-                
+
                 # VNT2 协议映射回 UI 显示（严格按照文档）
                 # YAML存储: quic, tcp, wss, dynamic -> UI显示: QUIC, TCP, WSS, DYNAMIC
                 protocol_mapping = {
@@ -2315,12 +2405,12 @@ class VNT_Main_Window(wx.Frame):
                     'dynamic': 'DYNAMIC'
                 }
                 ui_protocol = protocol_mapping.get(protocol_prefix, 'QUIC')
-                
+
                 index = self.Protocol.FindString(ui_protocol)
                 if index == -1:
                     index = 0
                 self.Protocol.SetSelection(index)
-                
+
                 self.ServerIPPort.SetValue(service_address_port)
             elif isinstance(server_address, str):
                 # 没有协议前缀的情况
@@ -2330,7 +2420,7 @@ class VNT_Main_Window(wx.Frame):
                 # server_address 不是字符串的异常情况
                 self.ServerIPPort.SetValue('')
                 self.Protocol.SetSelection(0)
-            
+
             self.VirtualIP.SetValue(data.get('ip', ''))
         except Exception as e:
             self.logger.write(f"Reading yaml: {e}", 'critical')
@@ -2338,7 +2428,8 @@ class VNT_Main_Window(wx.Frame):
             if str(e) == "'ip'":
                 self.VirtualIP.SetValue('')
             else:
-                win32api.MessageBox(0, _("Error %s loading connection profile! Consider RESET") % str(e), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+                win32api.MessageBox(0, _("Error %s loading connection profile! Consider RESET") %
+                                    str(e), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
 
         try:
             # VNT2 compress 是布尔值，转换为 UI 显示
@@ -2392,7 +2483,8 @@ class VNT_Main_Window(wx.Frame):
 
     def on_exit(self, event):
         hwnd = self.GetHandle()
-        if win32api.MessageBox(hwnd, _("Are you sure to close VNT network and exit?"), _("Confirmation"),  win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) == win32con.IDYES:
+        if win32api.MessageBox(hwnd, _("Are you sure to close VNT network and exit?"), _(
+                "Confirmation"), win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) == win32con.IDYES:
             self.vnt_app.stop()
 
 
@@ -2594,7 +2686,7 @@ class VNT_Update_Window(wx.Frame):
         vnt_conf = VNT_Config(self.workingdir, self.config_fn, self.logger)
         can_update = vnt_conf.get_value(VNT_Config.KEY_AUTO_UPDATE_ENABLED)
         update_disabled = vnt_conf.get_value(VNT_Config.KEY_UPDATE_DISABLED)
-        
+
         # 如果AUTO_UPDATE_ENABLED为True，或者所有配置都是None/False（首次运行），则启动daemon
         if can_update or (can_update is None and update_disabled is None):
             self.vnt_update_daemon = threading.Thread(target=self._vnt_update_daemon, args=())
@@ -2768,7 +2860,8 @@ class VNT_Update_Window(wx.Frame):
         # Temporarily set update enabled to False for manual check
         if not vnt_conf.set_value(VNT_Config.KEY_AUTO_UPDATE_ENABLED, False):
             self.logger.write(f"Error writing {self.config_fn}", 'critical')
-            win32api.MessageBox(0, _("Error Updating VNT config"), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(0, _("Error Updating VNT config"), _("Status"), win32con.MB_OK |
+                                win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
             return
         manual_update_thread = threading.Thread(target=self._update_manually_operation, args=())
         manual_update_thread.daemon = True
@@ -2810,7 +2903,10 @@ class VNT_Update_Window(wx.Frame):
         except Exception:
             self.update_check_cycle_sec = 60
         finally:
-            self.logger.write(f"Update cycle time {self.update_check_cycle_sec} seconds written to {self.config_fn}", 'info')
+            self.logger.write(
+                f"Update cycle time {
+                    self.update_check_cycle_sec} seconds written to {
+                    self.config_fn}", 'info')
 
         # 拼接完整 URL
         host = self.version_host_txt.GetValue().strip()
@@ -2819,17 +2915,20 @@ class VNT_Update_Window(wx.Frame):
 
         # 此时应已通过 if_update_input_param_ok 验证，但再保险一下
         if not (host and port.isdigit() and 1 <= int(port) <= 65535):
-            win32api.MessageBox(0, _("Invalid Host or Port"), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(0, _("Invalid Host or Port"), _("Status"), win32con.MB_OK |
+                                win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
             return
 
         write_success = write_success and vnt_conf.set_value(VNT_Config.KEY_VERSION_FILE_URL, full_url)
 
         if not write_success:
-            win32api.MessageBox(0, _("Error saving the settings"), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(0, _("Error saving the settings"), _("Status"), win32con.MB_OK |
+                                win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
             return
 
         if not self._update_initialize_parameters():
-            win32api.MessageBox(0, _("Error Initialize Update Settings, check your URL or file name"), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(0, _("Error Initialize Update Settings, check your URL or file name"), _(
+                "Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
             return
 
         # Handle daemon based on update mode
@@ -3035,10 +3134,12 @@ class VNT_Update_Window(wx.Frame):
         try:
             if not self._update_initialize_parameters():
                 print("Update parameters error")
-                win32api.MessageBox(0, _("Update parameters error"), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+                win32api.MessageBox(0, _("Update parameters error"), _("Status"), win32con.MB_OK |
+                                    win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
                 return
 
-            if not Internet_Connectivity_Monitor.is_server_connected((self.version_control_server_IP, self.version_control_server_port)):
+            if not Internet_Connectivity_Monitor.is_server_connected(
+                    (self.version_control_server_IP, self.version_control_server_port)):
                 self.logger.write("Version control server Not Connected", 'info')
                 self.vnt_app.bubble_msg_handler.msg("Error#Version control server not connected")
                 return
@@ -3047,28 +3148,34 @@ class VNT_Update_Window(wx.Frame):
                 ver_diff, allowed = self._update_version_check()
                 if allowed and ver_diff:
                     if self._update_download():
-                        if win32api.MessageBox(0, _("Update package download completed, update now?"), _("Confirmation"), win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) == win32con.IDYES:
+                        if win32api.MessageBox(0, _("Update package download completed, update now?"), _(
+                                "Confirmation"), win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) == win32con.IDYES:
                             self._update_and_exit()
                     else:
-                        win32api.MessageBox(0, _("Error in downloading new package"), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+                        win32api.MessageBox(0, _("Error in downloading new package"), _("Status"),
+                                            win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
                 else:
                     if not ver_diff:
-                        win32api.MessageBox(0, _("No new version for an update found"), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+                        win32api.MessageBox(0, _("No new version for an update found"), _("Status"),
+                                            win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
                     else:
                         if not allowed:
-                            win32api.MessageBox(0, _("Update temporarily not allowed for this IP"), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+                            win32api.MessageBox(0, _("Update temporarily not allowed for this IP"), _(
+                                "Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
             else:
                 checksum_remote = version_conf.get_value(VNT_Config.KEY_CHECKSUM)
                 checksum_local = self.calculate_SHA256(os.path.join(self.workingdir, self.update_package_fn))
 
                 if checksum_remote == checksum_local and (checksum_remote is not None and checksum_local is not None):
                     self.logger.write("Checksum: " + str(checksum_local))
-                    if win32api.MessageBox(0, _("An update package is already downloaded, update now?"), _("Confirmation"), win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) == win32con.IDYES:
+                    if win32api.MessageBox(0, _("An update package is already downloaded, update now?"), _(
+                            "Confirmation"), win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) == win32con.IDYES:
                         self._update_and_exit()
                     else:
                         return
                 else:
-                    win32api.MessageBox(0, _("Downloaded package seems to be corrupted, will be deleted"), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+                    win32api.MessageBox(0, _("Downloaded package seems to be corrupted, will be deleted"), _(
+                        "Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
                     os.remove(os.path.join(self.workingdir, self.update_package_fn))
                     self.logger.write("Checksum not same. Download file removed")
                     return
@@ -3085,9 +3192,36 @@ class VNT_Update_Window(wx.Frame):
             fn_string = ",".join(file_nms)  # 更简洁的拼接
 
             if self.vnt_app.args.no_gui:
-                cmd = [updater_nm, "-d", working_dir, "-r", res_path, "-n", fn_string, "-f", zip_nm, "-e", exe_nm, "-l", log_fn, "-b"]
+                cmd = [
+                    updater_nm,
+                    "-d",
+                    working_dir,
+                    "-r",
+                    res_path,
+                    "-n",
+                    fn_string,
+                    "-f",
+                    zip_nm,
+                    "-e",
+                    exe_nm,
+                    "-l",
+                    log_fn,
+                    "-b"]
             else:
-                cmd = [updater_nm, "-d", working_dir, "-r", res_path, "-n", fn_string, "-f", zip_nm, "-e", exe_nm, "-l", log_fn]
+                cmd = [
+                    updater_nm,
+                    "-d",
+                    working_dir,
+                    "-r",
+                    res_path,
+                    "-n",
+                    fn_string,
+                    "-f",
+                    zip_nm,
+                    "-e",
+                    exe_nm,
+                    "-l",
+                    log_fn]
 
             self.logger.write(f"Updater command : {cmd}")
             try:
@@ -3240,8 +3374,12 @@ class VNT_Update_Window(wx.Frame):
 
             # Step 3: 多线程分段下载
             chunk_size = total_size // num_threads
-            ranges = [(i * chunk_size, (i + 1) * chunk_size - 1 if i < num_threads - 1 else total_size - 1) for i in range(num_threads)]
-            temp_files = [os.path.join(self.workingdir, f"{self.update_package_fn}.part{i}") for i in range(num_threads)]
+            ranges = [(i * chunk_size, (i + 1) * chunk_size - 1 if i < num_threads - 1 else total_size - 1)
+                      for i in range(num_threads)]
+            temp_files = [
+                os.path.join(
+                    self.workingdir, f"{
+                        self.update_package_fn}.part{i}") for i in range(num_threads)]
 
             downloaded_size = 0
             parts_to_download = []
@@ -3259,7 +3397,8 @@ class VNT_Update_Window(wx.Frame):
                         continue
                     else:
                         os.remove(part_file)
-                        self.logger.write(f"Part {i} incomplete (expected {expected_part_size}, got {actual_size}), will re-download")
+                        self.logger.write(
+                            f"Part {i} incomplete (expected {expected_part_size}, got {actual_size}), will re-download")
                 parts_to_download.append((start, end, i))
 
             self.vnt_update_cancel_flag.clear()
@@ -3309,7 +3448,8 @@ class VNT_Update_Window(wx.Frame):
                         else:
                             raise IOError(f"Size mismatch after download for part {part_id}")
                     except Exception as e:
-                        self.logger.write(f"Part {part_id} attempt {attempt + 1}/{max_retries + 1} failed: {e}", 'warning')
+                        self.logger.write(
+                            f"Part {part_id} attempt {attempt + 1}/{max_retries + 1} failed: {e}", 'warning')
                         if os.path.exists(temp_file):
                             try:
                                 os.remove(temp_file)
@@ -3454,7 +3594,11 @@ class VNT_Update_Window(wx.Frame):
                             )
 
                         if self.vnt_update_cancel_flag.is_set():
-                            if win32api.MessageBox(0, _("Stop downloading update package?"), _("Confirmation"), win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) == win32con.IDYES:
+                            if win32api.MessageBox(
+                                    0,
+                                    _("Stop downloading update package?"),
+                                    _("Confirmation"),
+                                    win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) == win32con.IDYES:
                                 break
                             else:
                                 self.vnt_update_cancel_flag.clear()
@@ -3490,7 +3634,8 @@ class VNT_Update_Window(wx.Frame):
     def _update_initialize_parameters(self):
 
         vnt_conf = VNT_Config(self.workingdir, self.config_fn, self.logger)
-        t = vnt_conf.get_value(VNT_Config.KEY_VERSION_FILE_URL) if vnt_conf.get_value(VNT_Config.KEY_VERSION_FILE_URL) is not None else self.default_version_control_file_url
+        t = vnt_conf.get_value(VNT_Config.KEY_VERSION_FILE_URL) if vnt_conf.get_value(
+            VNT_Config.KEY_VERSION_FILE_URL) is not None else self.default_version_control_file_url
         self.version_control_file_url = t
 
         try:
@@ -3506,10 +3651,12 @@ class VNT_Update_Window(wx.Frame):
             self.update_check_cycle_sec = 60
             self.logger.write(f"Set VNT update cycle error {e}, using default 60 seconds", 'critical')
 
-        if self.version_control_file_url == '' or self.version_control_file_url is None or (not validators.url(self.version_control_file_url)):
+        if self.version_control_file_url == '' or self.version_control_file_url is None or (
+                not validators.url(self.version_control_file_url)):
             return False
         else:
-            username, password, self.version_control_server_IP, port, self.version_control_fn = self._url_parse(self.version_control_file_url)
+            username, password, self.version_control_server_IP, port, self.version_control_fn = self._url_parse(
+                self.version_control_file_url)
 
             if port is None or not port.isdigit():
                 self.version_control_server_port = 80
@@ -3525,8 +3672,8 @@ class VNT_Update_Window(wx.Frame):
 
     def _update_version_check(self, background_running=False):
         version_conf = VNT_Config(self.workingdir, self.version_control_fn, self.logger)
-        if not self.vnt_app.inet_monitor.is_connected() or \
-           not Internet_Connectivity_Monitor.is_server_connected((self.version_control_server_IP, self.version_control_server_port)):
+        if not self.vnt_app.inet_monitor.is_connected() or not Internet_Connectivity_Monitor.is_server_connected(
+                (self.version_control_server_IP, self.version_control_server_port)):
             return False, False
         try:
             response_yaml = requests.get(self.version_control_file_url, stream=True)  # 假设服务器上有一个version.yaml文件
@@ -3548,7 +3695,8 @@ class VNT_Update_Window(wx.Frame):
             if self.update_package_url is None or self.update_package_url == '':
                 self.logger.write(f"Update package URL not found in {self.version_control_fn}")
             else:
-                username, password, self.update_server_IP, port, self.update_package_fn = self._url_parse(self.update_package_url)
+                username, password, self.update_server_IP, port, self.update_package_fn = self._url_parse(
+                    self.update_package_url)
 
                 if port is None or not port.isdigit():
                     self.update_server_port = 80
@@ -3578,11 +3726,14 @@ class VNT_Update_Window(wx.Frame):
             if latest_version != self.vnt_app.current_version and not background_running:
                 if allowd_to_update:
                     self.vnt_app.bubble_msg_handler.msg(f"Update#Version {latest_version} announced")
-                    self.logger.write(f"Current Version: {self.vnt_app.current_version}, New Version {latest_version} announced")
+                    self.logger.write(
+                        f"Current Version: {
+                            self.vnt_app.current_version}, New Version {latest_version} announced")
             else:
                 print(f"New version: {latest_version}, Current Version: {self.vnt_app.current_version}")
 
-            if not Internet_Connectivity_Monitor.is_server_connected((self.version_control_server_IP, self.version_control_server_port)):
+            if not Internet_Connectivity_Monitor.is_server_connected(
+                    (self.version_control_server_IP, self.version_control_server_port)):
                 return False, False
 
             return latest_version != self.vnt_app.current_version, allowd_to_update
@@ -3603,7 +3754,8 @@ class VNT_Update_Window(wx.Frame):
 
         time.sleep(5)  # Give VNT connection time to set up
 
-        while (not Internet_Connectivity_Monitor.is_server_connected((self.version_control_server_IP, self.version_control_server_port))):
+        while (not Internet_Connectivity_Monitor.is_server_connected(
+                (self.version_control_server_IP, self.version_control_server_port))):
             if self.vnt_update_daemon_exit_flag.is_set():
                 return
             time.sleep(1)
@@ -3616,7 +3768,7 @@ class VNT_Update_Window(wx.Frame):
             # Check if auto update is enabled before proceeding
             can_update = vnt_conf.get_value(VNT_Config.KEY_AUTO_UPDATE_ENABLED)
             update_disabled = vnt_conf.get_value(VNT_Config.KEY_UPDATE_DISABLED)
-            
+
             # If update is disabled or auto update is not enabled, skip the update check
             if update_disabled or not can_update:
                 time.sleep(1)
@@ -3638,8 +3790,10 @@ class VNT_Update_Window(wx.Frame):
                         if can_update:
 
                             checksum_remote = version_conf.get_value(VNT_Config.KEY_CHECKSUM)
-                            checksum_local = self.calculate_SHA256(os.path.join(self.workingdir, self.update_package_fn))
-                            if checksum_remote == checksum_local and (checksum_remote is not None and checksum_local is not None):
+                            checksum_local = self.calculate_SHA256(
+                                os.path.join(self.workingdir, self.update_package_fn))
+                            if checksum_remote == checksum_local and (
+                                    checksum_remote is not None and checksum_local is not None):
                                 self.logger.write(f"Checksum: {checksum_local}")
                                 self._update_and_exit()
                             else:
@@ -3966,7 +4120,7 @@ class VNT_Information_Window(wx.Frame):
         # 初始化数据哈希记录字典，用于检测数据变化
         if not hasattr(self, 'last_data_hash'):
             self.last_data_hash = {}
-        
+
         self.check_vnt_info_daemon = threading.Thread(target=self._check_vnt_info, args=("--info", self.exit_flag,))
         self.check_vnt_info_daemon.start()
         event.Skip()
@@ -3991,7 +4145,7 @@ class VNT_Information_Window(wx.Frame):
 
         self.m_grid3.AppendRows(row_count)
         self.m_grid3.AppendCols(col_count)
-        
+
         # 根据命令类型设置合理的列宽（针对 VNT2 输出格式优化）
         if cmd == "--list":
             # clients 命令：IP | Name | Version | Online | P2P | RTT | Loss | Last Connected Time
@@ -4016,7 +4170,7 @@ class VNT_Information_Window(wx.Frame):
         """
         VNT2 信息查询方法
         使用 vnt2_ctrl.exe 替代 vnt-cli.exe
-        
+
         命令映射:
         - --list → clients (客户端信息列表)
         - --route → route (路由信息)
@@ -4035,12 +4189,12 @@ class VNT_Information_Window(wx.Frame):
             "--route": "route",
             "--info": "info"
         }
-        
+
         vnt2_cmd = cmd_mapping.get(cmd, cmd)
         self.logger.write(f"[GUI DEBUG] Info Daemon started for cmd={cmd}, mapped to vnt2_cmd={vnt2_cmd}", 'debug')
 
         while not exit_flag.is_set():
-            
+
             try:
                 # VNT2 使用子命令格式: vnt2_ctrl.exe <command>
                 self.logger.write(f"[GUI DEBUG] Starting process: {working_vnt_ctrl} {vnt2_cmd}", 'debug')
@@ -4051,24 +4205,30 @@ class VNT_Information_Window(wx.Frame):
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE
                 )
-                
+
                 # 等待进程完成（VNT2 命令是瞬时执行的）
                 stdout, stderr = p.communicate(timeout=5)
-                
+
                 if p.returncode != 0:
-                    self.logger.write(f"[GUI DEBUG] Command failed with return code {p.returncode}: {stderr.decode('utf-8', 'ignore')}", 'error')
+                    self.logger.write(
+                        f"[GUI DEBUG] Command failed with return code {
+                            p.returncode}: {
+                            stderr.decode(
+                                'utf-8',
+                                'ignore')}",
+                        'error')
                     time.sleep(2)  # 失败时延长重试间隔
                     continue
-                
+
                 # 解码输出
                 text = stdout.decode('utf-8', 'ignore')
                 self.logger.write(f"[GUI DEBUG] Received {len(text)} bytes of output", 'debug')
-                
+
                 if not text or len(text.strip()) == 0:
                     self.logger.write(f"[GUI DEBUG] Empty output received", 'debug')
                     time.sleep(2)  # 空输出时延长重试间隔
                     continue
-                
+
                 # 清理 ANSI 转义码（颜色代码）
                 # ANSI 转义码格式: \x1b[...m 或 \x1b(...\)
                 ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
@@ -4077,7 +4237,7 @@ class VNT_Information_Window(wx.Frame):
 
                 # 根据命令类型选择不同的解析策略
                 data = []
-                
+
                 if cmd == "--info":
                     # info 命令输出的是键值对格式，需要特殊处理
                     lines = text.strip().split("\n")
@@ -4086,7 +4246,7 @@ class VNT_Information_Window(wx.Frame):
                         # 跳过装饰行和空行
                         if not line or line.startswith('---') or line.startswith('==='):
                             continue
-                        
+
                         # 尝试解析 "Key: Value" 格式
                         if ':' in line:
                             parts = line.split(':', 1)  # 只分割第一个冒号
@@ -4095,33 +4255,33 @@ class VNT_Information_Window(wx.Frame):
                                 value = parts[1].strip()
                                 if key and value:
                                     data.append([key, value])
-                    
+
                     self.logger.write(f"[GUI DEBUG] Parsed {len(data)} key-value pairs from info output", 'debug')
-                    
+
                 else:
                     # clients 和 route 命令输出的是表格格式
                     lines = text.strip().split("\n")
                     self.logger.write(f"[GUI DEBUG] Parsed {len(lines)} lines from output", 'debug')
-                    
+
                     # 解析表格数据
                     for line in lines:
                         line = line.strip()
                         # 跳过空行和表格边框行
                         if not line or line.startswith('+') or line.startswith('---'):
                             continue
-                        
+
                         # 处理表头行和数据行
                         if line.startswith('|'):
                             # 移除首尾的 | 符号，然后按 | 分割
                             cells = [cell.strip() for cell in line.split('|')[1:-1]]
                             if cells and any(cell for cell in cells):  # 确保不是全空行
                                 data.append(cells)
-                    
+
                     # 对 clients 命令的数据按 IP 地址排序（保留表头）
                     if cmd == "--list" and len(data) > 1:
                         header = data[0]  # 保存表头
                         data_rows = data[1:]  # 获取数据行
-                        
+
                         # 定义 IP 地址排序函数
                         def ip_sort_key(row):
                             """将 IP 地址转换为可排序的元组"""
@@ -4135,24 +4295,26 @@ class VNT_Information_Window(wx.Frame):
                             except (ValueError, IndexError):
                                 pass
                             return (999, 999, 999, 999)  # 无效 IP 排到最后
-                        
+
                         # 按 IP 地址排序数据行
                         data_rows.sort(key=ip_sort_key)
-                        
+
                         # 重新组合：表头 + 排序后的数据
                         data = [header] + data_rows
-                    
+
                     self.logger.write(f"[GUI DEBUG] Extracted {len(data)} rows of table data", 'debug')
 
                 # 计算数据的哈希值，用于检测是否变化
                 data_str = str(data)
                 current_hash = hashlib.md5(data_str.encode('utf-8')).hexdigest()
-                
+
                 # 如果数据没有变化，跳过更新（减少刷屏）
-                if hasattr(self, 'last_data_hash') and cmd in self.last_data_hash and self.last_data_hash[cmd] == current_hash:
+                if hasattr(
+                        self,
+                        'last_data_hash') and cmd in self.last_data_hash and self.last_data_hash[cmd] == current_hash:
                     time.sleep(2)  # 数据未变化，延长刷新间隔到 2 秒
                     continue
-                
+
                 # 数据已变化，更新哈希值
                 if not hasattr(self, 'last_data_hash'):
                     self.last_data_hash = {}
@@ -4175,7 +4337,7 @@ class VNT_Information_Window(wx.Frame):
                         for col, value in enumerate(row_data):
                             if col < self.m_grid3.GetNumberCols():  # 确保不超出列范围
                                 wx.CallAfter(self._write_grid, row, col, value)
-                    
+
                     self.logger.write(f"[GUI DEBUG] Wrote {len(data)} rows to grid", 'debug')
 
             except subprocess.TimeoutExpired:
@@ -4184,7 +4346,7 @@ class VNT_Information_Window(wx.Frame):
                     p.kill()
             except Exception as e:
                 self.logger.write(f"[GUI DEBUG] Failed to execute vnt2_ctrl.exe: {e}", 'critical')
-            
+
             # 正常刷新间隔：1.5 秒（平衡实时性和可读性）
             time.sleep(1.5)
 
@@ -4334,7 +4496,9 @@ class VNT_TaskBar_Icon(wx.adv.TaskBarIcon):
 
     def on_toggle_notification(self, event):
         vnt_conf = VNT_Config(self.workingdir, self.config_fn, self.logger)
-        s = vnt_conf.get_value(VNT_Config.KEY_VNT_NOTIFICATION_ENABLED) if vnt_conf.get_value(VNT_Config.KEY_VNT_NOTIFICATION_ENABLED) is not None else False
+        s = vnt_conf.get_value(
+            VNT_Config.KEY_VNT_NOTIFICATION_ENABLED) if vnt_conf.get_value(
+            VNT_Config.KEY_VNT_NOTIFICATION_ENABLED) is not None else False
         vnt_conf.set_value(VNT_Config.KEY_VNT_NOTIFICATION_ENABLED, not s)
 
     def on_toggle_vnt_connection(self, event):
@@ -4405,14 +4569,16 @@ class VNT_TaskBar_Icon(wx.adv.TaskBarIcon):
         if result:
             win32api.MessageBox(0, t, _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK)
         else:
-            win32api.MessageBox(0, _("Fail to change AutoRun setting, Try manually change regedit and taskscheduler!"), _("Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(0, _("Fail to change AutoRun setting, Try manually change regedit and taskscheduler!"), _(
+                "Status"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
 
         event.Skip()
 
     def on_reset(self, event):
         vnt_conf = VNT_Config(self.workingdir, self.config_fn, self.logger)
         t = _("Are you sure to clean VNT network settings?\n\nVNT Helper will stop running. Next time run will be a fresh start.")
-        if win32api.MessageBox(0, t, _("Confirmation"),  win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) != win32con.IDYES:
+        if win32api.MessageBox(0, t, _("Confirmation"), win32con.MB_YESNO |
+                               win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) != win32con.IDYES:
             return
 
         connection_config_file = vnt_conf.get_value(VNT_Config.KEY_VNT_CONNECTION_CONFIG_YAML)
@@ -4433,11 +4599,11 @@ class VNT_TaskBar_Icon(wx.adv.TaskBarIcon):
                         time.sleep(2)
                     else:
                         self.logger.write(f"Shutdown daemon command response: {resp.get('msg', 'unknown')}")
-                    
+
                     # 停止Windows服务
                     self.logger.write("Stopping VNT daemon service...", 'info')
                     self.vnt_app.stop_service()
-                
+
                 # 卸载服务
                 self.logger.write("Uninstalling VNT daemon service...", 'info')
                 self.vnt_app.uninstall_service()
@@ -4446,11 +4612,11 @@ class VNT_TaskBar_Icon(wx.adv.TaskBarIcon):
             if os.path.exists(connection_config_file):
                 os.remove(connection_config_file)
                 self.logger.write(f"Removed config file: {connection_config_file}")
-            
+
             if os.path.exists(os.path.join(self.workingdir, self.config_fn)):
                 os.remove(os.path.join(self.workingdir, self.config_fn))
                 self.logger.write(f"Removed helper config file")
-            
+
             # 移除自启动
             self.vnt_app.reg_task_autorun.remove_autorun()
             time.sleep(0.1)
@@ -4460,8 +4626,8 @@ class VNT_TaskBar_Icon(wx.adv.TaskBarIcon):
         except Exception as e:
             self.logger.write(f"Reset {e}", 'critical')
             win32api.MessageBox(0, _("Error Cleaning VNT Setting. You may consider (1) manually remove\
-                          {self.config_fn} in the VNT folder. (2) REGEDIT to find MANAGE_VNT key and remove it"),
-                                _("Manage VNT not Initialized"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
+                          {self.config_fn} in the VNT folder. (2) REGEDIT to find MANAGE_VNT key and remove it"), _(
+                "Manage VNT not Initialized"), win32con.MB_OK | win32con.MB_ICONASTERISK | win32con.MB_SYSTEMMODAL)
         return
 
     def on_about(self, event):
@@ -4471,7 +4637,12 @@ class VNT_TaskBar_Icon(wx.adv.TaskBarIcon):
             self.vnt_app.vnt_cli_version = resp.get("version")
             self.vnt_app.vnt_cli_serial = resp.get("serial")
             self.vnt_app.vnt_server_version = resp.get("server_version")
-            self.logger.write(f"About: ip {ip}; cli ver {self.vnt_app.vnt_cli_version}; serial {self.vnt_app.vnt_cli_serial}; server ver {self.vnt_app.vnt_server_version}", 'debug')
+            self.logger.write(
+                f"About: ip {ip}; cli ver {
+                    self.vnt_app.vnt_cli_version}; serial {
+                    self.vnt_app.vnt_cli_serial}; server ver {
+                    self.vnt_app.vnt_server_version}",
+                'debug')
         time.sleep(0.5)
 
         CMD_LINE_HELP = _('Command line parameters:\n') + f'{os.path.basename(sys.argv[0])} [-h] [-d] [-b] [-v]\n\n' + _('optional arguments:\n') + \
@@ -4488,19 +4659,24 @@ class VNT_TaskBar_Icon(wx.adv.TaskBarIcon):
         about = AboutDialog(
             parent=self.vnt_app.main_window,
             title=_("About"),
-            icon_path=os.path.join(self.workingdir, VNT_HELPER_ICON),
+            icon_path=os.path.join(
+                self.workingdir,
+                VNT_HELPER_ICON),
             app_name="VNT Helper",
             version=ver_info,
-            description="Virtual IP: %s\n" % self.vnt_app.vnt_connection.virtual_IP,
+            description="Virtual IP: %s\n" %
+            self.vnt_app.vnt_connection.virtual_IP,
             url="https://rustvnt.com",
-            quote=_("\"This is a crazy world. By coding sometimes we ignore it...\"") + "\n- " + _("By the Author in an unforgettable spring of 2022 in Shanghai.")
-        )
+            quote=_("\"This is a crazy world. By coding sometimes we ignore it...\"") +
+            "\n- " +
+            _("By the Author in an unforgettable spring of 2022 in Shanghai."))
         about.ShowModal()
         VNT_Main_Window.set_window_topmost(about)
         about.Destroy()
 
     def on_exit(self, event):
-        if win32api.MessageBox(0, _("Are you sure to close VNT network and exit?"), _("Confirmation"),  win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) == win32con.IDYES:
+        if win32api.MessageBox(0, _("Are you sure to close VNT network and exit?"), _("Confirmation"),
+                               win32con.MB_YESNO | win32con.MB_ICONQUESTION | win32con.MB_SYSTEMMODAL) == win32con.IDYES:
             self.vnt_app.stop()
 
 
@@ -4647,8 +4823,7 @@ class VNT_Log_Window(wx.Frame):
             self,
             _("Save current log content?\nThe original log file will be overwritten with the lines currently displayed."),
             _("Confirm Save"),
-            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION
-        )
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
         if dlg.ShowModal() != wx.ID_YES:
             dlg.Destroy()
             return
@@ -4680,10 +4855,12 @@ class VNT_Log_Window(wx.Frame):
             else:
                 self.last_position = 0
 
-            win32api.MessageBox(None, _("Log saved successfully!"), _("Success"), win32con.MB_OK | win32con.MB_ICONINFORMATION | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(None, _("Log saved successfully!"), _("Success"), win32con.MB_OK |
+                                win32con.MB_ICONINFORMATION | win32con.MB_SYSTEMMODAL)
 
         except Exception as e:
-            win32api.MessageBox(None, _("Failed to save log:\n{e}").format(e=e), _("Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(None, _("Failed to save log:\n{e}").format(e=e), _(
+                "Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
 
     def read_log_lines(self):
         if not os.path.exists(self.LOG_FILE):
@@ -4771,9 +4948,11 @@ class VNT_Log_Window(wx.Frame):
             open(self.LOG_FILE, 'w').close()
             self.last_position = 0
             self.clear_all_gui()
-            win32api.MessageBox(None, _("Log file and view cleared."), _("Info"), win32con.MB_OK | win32con.MB_ICONINFORMATION | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(None, _("Log file and view cleared."), _("Info"), win32con.MB_OK |
+                                win32con.MB_ICONINFORMATION | win32con.MB_SYSTEMMODAL)
         except Exception as e:
-            win32api.MessageBox(None, _("Clear failed: {e}").format(e=e), _("Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(None, _("Clear failed: {e}").format(e=e), _(
+                "Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
 
     def copy_selected_to_clipboard(self):
         selected = self.get_selected_indices()
@@ -4925,7 +5104,8 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
             with open(self.yaml_path, 'r', encoding='utf-8') as f:
                 self.original_data = yaml.safe_load(f) or {}
         except Exception as e:
-            win32api.MessageBox(None, _("Failed to load YAML:\n{e}").format(e=e), _("Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(None, _("Failed to load YAML:\n{e}").format(e=e), _(
+                "Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
             self.original_data = {}
 
     def is_tcp_key(self, key_path: tuple) -> bool:
@@ -4960,7 +5140,6 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
             'udp_stun', 'tcp_stun',
         }
 
-        
         # 主UI中直接显示的字段（需要标红）
         main_ui_keys = {
             'network_code',      # Token
@@ -4978,14 +5157,14 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
             if len(key_path) == 0 and parent_item == self.root:
                 # VNT1 遗留字段列表（需要过滤掉）
                 vnt1_legacy_keys = {'token', 'server_address', 'name', 'cipher_model', 'server_encrypt', 'compressor'}
-                
+
                 # 先显示已存在的字段（过滤掉VNT1遗留字段）
                 existing_keys = set()
                 for key, value in data.items():
                     # 跳过VNT1遗留字段
                     if key in vnt1_legacy_keys:
                         continue
-                    
+
                     existing_keys.add(key)
                     new_key_path = key_path + (key,)
                     is_main_ui = key in main_ui_keys
@@ -5015,11 +5194,11 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
                         new_key_path = (key,)
                         display_val = self.preview_value(default_value)
                         item = self.tree.AppendItem(parent_item, f"{key}: {display_val}")
-                        
+
                         # 只有主UI字段才标红
                         if key in main_ui_keys:
                             self.tree.SetItemTextColour(item, wx.RED)
-                        
+
                         # 将默认值添加到原始数据中
                         data[key] = default_value
             else:
@@ -5160,7 +5339,8 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
             else:
                 data[last_key] = new_value
         except Exception as e:
-            win32api.MessageBox(None, _("Failed to update value:\n{e}").format(e=e), _("Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(None, _("Failed to update value:\n{e}").format(e=e), _(
+                "Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
 
     def on_text_enter(self, event):
         self.apply_value_change()
@@ -5248,7 +5428,6 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
                 elif isinstance(first, str) and key_part == first:
                     match = True
 
-
                 if match:
                     return find_item_by_path(child, path[1:])
                 child, cookie = self.tree.GetNextChild(parent_item, cookie)
@@ -5266,7 +5445,9 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
     def on_save_as(self, event):
         self.apply_value_change()  # 同样，只保存已回车确认的修改
         # 获取当前yaml文件所在目录作为默认目录
-        default_dir = os.path.dirname(self.yaml_path) if self.yaml_path and os.path.exists(self.yaml_path) else self.parent_win.workingdir
+        default_dir = os.path.dirname(
+            self.yaml_path) if self.yaml_path and os.path.exists(
+            self.yaml_path) else self.parent_win.workingdir
         with wx.FileDialog(
             self, "Save YAML file", defaultDir=default_dir, wildcard="YAML files (*.yaml;*.yml)|*.yaml;*.yml",
             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT
@@ -5280,15 +5461,17 @@ class VNT_YamlConfigEditor_Window(wx.Dialog):
         try:
             # VNT1 遗留字段列表（保存前需要清除）
             vnt1_legacy_keys = {'token', 'server_address', 'name', 'cipher_model', 'server_encrypt', 'compressor'}
-            
+
             # 创建数据副本并清除VNT1遗留字段
             clean_data = {k: v for k, v in self.original_data.items() if k not in vnt1_legacy_keys}
-            
+
             with open(path, 'w', encoding='utf-8') as f:
                 yaml.dump(clean_data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-            win32api.MessageBox(None, _("Saved successfully!"), _("Info"), win32con.MB_OK | win32con.MB_ICONINFORMATION | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(None, _("Saved successfully!"), _("Info"), win32con.MB_OK |
+                                win32con.MB_ICONINFORMATION | win32con.MB_SYSTEMMODAL)
         except Exception as e:
-            win32api.MessageBox(None, _("Failed to save:\n{e}").format(e=e), _("Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(None, _("Failed to save:\n{e}").format(e=e), _(
+                "Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
 
     def _get_expanded_paths(self, item=None, parent_path=()):
         """递归获取所有已展开的非叶子节点的 key 路径"""
@@ -5444,7 +5627,10 @@ class VNT_ManageProfile_Frame(wx.Dialog):
             self.logger = None
 
         vnt_conf = VNT_Config(self.workingdir, self.config_fn, self.logger)
-        if vnt_conf.get_value(VNT_Config.KEY_VNT_CONNECTION_CONFIG_YAML) is None or not os.path.exists(vnt_conf.get_value(VNT_Config.KEY_VNT_CONNECTION_CONFIG_YAML)):
+        if vnt_conf.get_value(
+            VNT_Config.KEY_VNT_CONNECTION_CONFIG_YAML) is None or not os.path.exists(
+            vnt_conf.get_value(
+                VNT_Config.KEY_VNT_CONNECTION_CONFIG_YAML)):
             p = "Not Available"
         else:
             p = os.path.splitext(os.path.basename(vnt_conf.get_value(VNT_Config.KEY_VNT_CONNECTION_CONFIG_YAML)))[0]
@@ -5474,7 +5660,6 @@ class VNT_ManageProfile_Frame(wx.Dialog):
     def on_import(self, event):
         # VNT2 配置验证字段（基于 vnt2_conf_toml_example.toml）
         important_keys = {'network_code', 'server', 'device_id', 'device_name', 'password', 'ip', 'compress'}
-
 
         def extract_all_keys(data: Union[Dict, List]) -> Set[str]:
             """递归提取数据中所有字典的键名（去重）"""
@@ -5512,12 +5697,16 @@ class VNT_ManageProfile_Frame(wx.Dialog):
                 if pathname is not None and os.path.exists(pathname):
                     target_path = os.path.join(self.workingdir, os.path.basename(pathname))
 
-                    if os.path.normpath(os.path.dirname(pathname)) != os.path.normpath(self.workingdir):  # 如果源路径不在当前工作目录中
+                    if os.path.normpath(
+                            os.path.dirname(pathname)) != os.path.normpath(
+                            self.workingdir):  # 如果源路径不在当前工作目录中
                         if os.path.exists(target_path):
                             hwnd = self.GetHandle()  # 👈 关键：提供父窗口句柄
-                            msg = _("The file '{}' already exists in the current directory.\nDo you want to overwrite it?").format(os.path.basename(target_path))
+                            msg = _("The file '{}' already exists in the current directory.\nDo you want to overwrite it?").format(
+                                os.path.basename(target_path))
                             # Ask user whether to overwrite
-                            result = win32api.MessageBox(hwnd, msg, _("Confirm Overwrite"), win32con.MB_YESNO | win32con.MB_ICONQUESTION)
+                            result = win32api.MessageBox(
+                                hwnd, msg, _("Confirm Overwrite"), win32con.MB_YESNO | win32con.MB_ICONQUESTION)
                             if result == win32con.IDYES:
                                 shutil.copy2(pathname, target_path)
                             # else: user chose No – do nothing
@@ -5525,13 +5714,28 @@ class VNT_ManageProfile_Frame(wx.Dialog):
                             # No conflict, just copy
                             shutil.copy2(pathname, target_path)
 
-                    if self.update_profile_list(os.path.join(self.workingdir, self.config_fn), VNT_Config.KEY_VNT_PROFILE_LIST, os.path.splitext(os.path.basename(pathname))[0], 'add'):
-                        self.logger.write(f"Profile list updated with {os.path.splitext(os.path.basename(pathname))[0]}")
+                    if self.update_profile_list(
+                            os.path.join(
+                                self.workingdir,
+                                self.config_fn),
+                            VNT_Config.KEY_VNT_PROFILE_LIST,
+                            os.path.splitext(
+                                os.path.basename(pathname))[0],
+                            'add'):
+                        self.logger.write(
+                            f"Profile list updated with {
+                                os.path.splitext(
+                                    os.path.basename(pathname))[0]}")
                         self._load_profiles()
                     else:
-                        self.logger.write(f"Error updating profile list with {os.path.splitext(os.path.basename(pathname))[0]}, probably already exists", "debug")
+                        self.logger.write(
+                            f"Error updating profile list with {
+                                os.path.splitext(
+                                    os.path.basename(pathname))[0]}, probably already exists",
+                            "debug")
             else:
-                win32api.MessageBox(None, _("The selected file does not appear to be a valid VNT setting profile:\n{pathname}").format(pathname=pathname), _("Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
+                win32api.MessageBox(None, _("The selected file does not appear to be a valid VNT setting profile:\n{pathname}").format(
+                    pathname=pathname), _("Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
 
     def on_delete(self, event):
 
@@ -5567,7 +5771,8 @@ class VNT_ManageProfile_Frame(wx.Dialog):
 
         fn = os.path.join(self.workingdir, f"{selected_item}.yaml")
 
-        if win32api.MessageBox(None, _("Are you sure to delete the selected profile?\n\nThis will also delete the file:\n{fn}").format(fn=fn), _("Confirmation"), win32con.MB_OKCANCEL | win32con.MB_ICONWARNING | win32con.MB_SYSTEMMODAL) != win32con.IDOK:
+        if win32api.MessageBox(None, _("Are you sure to delete the selected profile?\n\nThis will also delete the file:\n{fn}").format(
+                fn=fn), _("Confirmation"), win32con.MB_OKCANCEL | win32con.MB_ICONWARNING | win32con.MB_SYSTEMMODAL) != win32con.IDOK:
             return
 
         for idx in sorted(selected_indices, reverse=True):
@@ -5578,11 +5783,13 @@ class VNT_ManageProfile_Frame(wx.Dialog):
         except OSError as e:
             if self.logger:
                 self.logger.write(f"Delete profile {fn}: {e}", "critical")
-            win32api.MessageBox(None, _("Failed to delete profile file:\n{e}").format(e=e), _("Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(None, _("Failed to delete profile file:\n{e}").format(e=e), _(
+                "Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
 
         new_list = remove_from_semicolon_string(list_of_profiles, selected_item)
         if not vnt_conf.set_value(VNT_Config.KEY_VNT_PROFILE_LIST, new_list):
-            win32api.MessageBox(None, _("Failed to update profile list in:\n{fn}\nYou may need to manually update it").format(fn=fn), _("Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
+            win32api.MessageBox(None, _("Failed to update profile list in:\n{fn}\nYou may need to manually update it").format(
+                fn=fn), _("Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
         # 👇 删除后选中清空，需更新按钮状态
         self.on_selection_changed(event)
 
@@ -5770,7 +5977,8 @@ class AboutDialog(wx.Dialog):
                 try:
                     webbrowser.open(self.url)
                 except Exception as e:
-                    win32api.MessageBox(None, _("Cannot open URL:\n{e}").format(e=e), _("Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
+                    win32api.MessageBox(None, _("Cannot open URL:\n{e}").format(e=e), _(
+                        "Error"), win32con.MB_OK | win32con.MB_ICONERROR | win32con.MB_SYSTEMMODAL)
 
         style = wx.CAPTION | wx.STATIC_BORDER | wx.TAB_TRAVERSAL | wx.STAY_ON_TOP
         super(AboutDialog, self).__init__(parent, title=title, style=style)
@@ -6015,7 +6223,11 @@ class Bubble_Message():
                         # Skip showing the message
                         pass
                     elif m != LAST_STATUS_MSG or VNT_Connection.VIRTUAL_IP_TEXT in m:
-                        toast = Notification(app_id="VNT Network Helper", title=m.split('#')[0], msg=m.split('#')[1].rstrip(), icon=self.ico_path)
+                        toast = Notification(
+                            app_id="VNT Network Helper",
+                            title=m.split('#')[0],
+                            msg=m.split('#')[1].rstrip(),
+                            icon=self.ico_path)
                         toast.show()
                         # Update the last message and time when actually showing a message
                         LAST_STATUS_MSG = m
@@ -6036,7 +6248,15 @@ class Registry_Taskschedule_for_AutoRun():
     DEFAULT_WINREG_KEY = r"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"
     DEFAULT_REG_CONTENT = "schtasks /run /tn " + TASK_BUZZ_WORD_SESSION_1
 
-    def __init__(self, vntapp, workingdir, logger, no_gui_flag, debug_mode, kill_flag, task_name1=TASK_BUZZ_WORD_SESSION_1):
+    def __init__(
+            self,
+            vntapp,
+            workingdir,
+            logger,
+            no_gui_flag,
+            debug_mode,
+            kill_flag,
+            task_name1=TASK_BUZZ_WORD_SESSION_1):
         self.task_name_1 = task_name1
 
         self.workingdir = workingdir
@@ -6074,7 +6294,13 @@ class Registry_Taskschedule_for_AutoRun():
 
         return False
 
-    def _create_taskschedule_item(self, usr, action_txt, action_args='', description='', task_name=TASK_BUZZ_WORD_SESSION_1):
+    def _create_taskschedule_item(
+            self,
+            usr,
+            action_txt,
+            action_args='',
+            description='',
+            task_name=TASK_BUZZ_WORD_SESSION_1):
 
         if self._check_task_existence(task_name):
             return True
@@ -6137,7 +6363,13 @@ class Registry_Taskschedule_for_AutoRun():
             self.logger.write(f'Deleting task: {e}', 'critical')
             return False
 
-    def _handle_autostart_registry(self, mode, reg_hive=DEFAULT_REG_HIVE, reg_name=TASK_BUZZ_WORD_SESSION_1, reg_content=DEFAULT_REG_CONTENT, KeyName=DEFAULT_WINREG_KEY):
+    def _handle_autostart_registry(
+            self,
+            mode,
+            reg_hive=DEFAULT_REG_HIVE,
+            reg_name=TASK_BUZZ_WORD_SESSION_1,
+            reg_content=DEFAULT_REG_CONTENT,
+            KeyName=DEFAULT_WINREG_KEY):
 
         key = win32api.RegOpenKey(reg_hive, KeyName, 0, win32con.KEY_ALL_ACCESS)
 
@@ -6204,8 +6436,10 @@ class Registry_Taskschedule_for_AutoRun():
             if self._check_task_existence(self.task_name_1):
                 self.TaskScheduler_Succss = self._remove_task(self.task_name_1)
 
-            self.TaskScheduler_Succss = self.TaskScheduler_Succss and \
-                self._create_taskschedule_item(self.task_current_user, os.path.join(self.workingdir, os.path.basename(sys.argv[0])), self.task_arg, self.task_description, self.task_name_1)
+            self.TaskScheduler_Succss = self.TaskScheduler_Succss and self._create_taskschedule_item(
+                self.task_current_user, os.path.join(
+                    self.workingdir, os.path.basename(
+                        sys.argv[0])), self.task_arg, self.task_description, self.task_name_1)
 
             if not self.TaskScheduler_Succss:
                 self.logger.write("Error Writing TaskScheduler!", "critical")
@@ -6223,7 +6457,12 @@ class Registry_Taskschedule_for_AutoRun():
             self.Service_Success = self._set_vnt_services_autorun_vnt_cli(True)
 
             if self.logger is not None:
-                self.logger.write(f"task {self.TaskScheduler_Succss}, registry {self.Regedit_Success}, service {self.Service_Success}", 'debug')
+                self.logger.write(
+                    f"task {
+                        self.TaskScheduler_Succss}, registry {
+                        self.Regedit_Success}, service {
+                        self.Service_Success}",
+                    'debug')
             return self.TaskScheduler_Succss and self.Regedit_Success and self.Service_Success
 
         except Exception as e:
@@ -6246,7 +6485,12 @@ class Registry_Taskschedule_for_AutoRun():
             self.Service_Success = self._set_vnt_services_autorun_vnt_cli(False)
 
             if self.logger is not None:
-                self.logger.write(f"task {self.TaskScheduler_Succss}, registry {self.Regedit_Success}, service {self.Service_Success}", 'debug')
+                self.logger.write(
+                    f"task {
+                        self.TaskScheduler_Succss}, registry {
+                        self.Regedit_Success}, service {
+                        self.Service_Success}",
+                    'debug')
 
             return self.TaskScheduler_Succss and self.Regedit_Success and self.Service_Success
         except Exception as e:
