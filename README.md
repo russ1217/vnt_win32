@@ -1,6 +1,6 @@
 # VNT Helper for Windows
 
-A native Windows application for managing VNT (Virtual Network Tool) networks, built with **wxPython** and designed specifically for the Windows ecosystem.
+A native Windows wrapper application for managing VNT (Virtual Network Tool https://github.com/vnt-dev/vnt) networks, built with **wxPython** and designed specifically for the Windows ecosystem.
 
 ## 🎯 About This Application
 
@@ -156,7 +156,8 @@ Both formats are automatically detected and displayed in a unified interface.
 
 ## 📄 License
 
-[Specify your license here]
+The core vnt2_cli binary is from the project https://github.com/vnt-dev/vnt
+This project is licensed under the MIT License.
 
 ## 🤝 Contributing
 
