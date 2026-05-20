@@ -106,6 +106,8 @@ The application manages a Windows Service named "VNTDaemon":
 The application features an intelligent update system:
 
 1. **Check for Updates**: Periodically checks for new versions
+   - the update control file is placed at http://the-ip-of-your-server:port/files/version.yaml  (can be configured in the application)
+   - the update file is vnt_helper.zip, location and checksum of which are defined in the controlling file version.yaml
 2. **Graceful Shutdown**: 
    - Stops network connections
    - Sends shutdown signal to daemon
