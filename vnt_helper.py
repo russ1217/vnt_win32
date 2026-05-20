@@ -49,7 +49,7 @@ from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-VNT_HELPER_VERSION = "v4_2026.05.19.18"
+VNT_HELPER_VERSION = "v4_2026.05.20.03"
 VNT_CLI_LOG_FILE = 'vnt_cli.log'
 VNT_HELPER_CONFIG_FILE = "vnt_helper.yaml"
 VNT_CLIENT_NAME = "vnt2_cli.exe"  # VNT 2.0 客户端
@@ -1035,11 +1035,18 @@ class VNT_Connection():
         etype = event.get("event")
         if etype == "IP_assigned":
             ip = event.get("ip", "unknown")
+            old_ip = self.virtual_IP
             self.virtual_IP = ip
             self.logger.write(f"[IPC] IP Assigned. Virtual IP: {self.virtual_IP}", 'debug')
 
-            # 当IP分配时，如果已连接但未通知，立即显示通知
-            if not self._connected_notified and self.vnt_app.bubble_msg_handler is not None and self.vnt_app.args.no_gui is False:
+            # 当IP分配时，如果是首次获得IP（从None变为有值），立即显示通知
+            # 这样可以确保首次连接时一定能看到条幅通知
+            if old_ip is None and self.vnt_app.bubble_msg_handler is not None and self.vnt_app.args.no_gui is False:
+                self.vnt_app.bubble_msg_handler.msg(f"Connected#{self.VIRTUAL_IP_TEXT}{self.virtual_IP}")
+                self._connected_notified = True
+                self.logger.write("[IPC] First IP assigned notification displayed.", 'debug')
+            elif not self._connected_notified and self.vnt_app.bubble_msg_handler is not None and self.vnt_app.args.no_gui is False:
+                # 兼容旧逻辑：如果之前未通知过，也显示通知
                 self.vnt_app.bubble_msg_handler.msg(f"Connected#{self.VIRTUAL_IP_TEXT}{self.virtual_IP}")
                 self._connected_notified = True
                 self.logger.write("[IPC] IP assigned notification displayed.", 'debug')
@@ -3231,21 +3238,56 @@ class VNT_Update_Window(wx.Frame):
                 return
             self.logger.write(f"Updater PID: {process.pid}")
 
-        # Check if service is running and stop it before update
+        # === 优雅的更新退出流程 ===
         self.vnt_app.update_process_started = True
-        if self.vnt_app.is_service_installed():
-            if self.vnt_app.get_service_status() == "RUNNING":
-                resp = self.vnt_app.vnt_connection._send_ipc_command({"cmd": "exit"})
-                if resp.get("status") != "daemon exits":
-                    self.logger.write(f"Daemon probably already exited: {resp.get('msg')}")
-                else:
-                    self.logger.write("Daemon exit command replies with success...")
-                self.logger.write("Stopping VNT daemon service before update...", 'info')
-                self.vnt_app.stop_service()
-            # Uninstall the old service
-            self.logger.write("Uninstalling old VNT daemon service...", 'info')
-            self.vnt_app.uninstall_service()
+        
+        # Step 1: 通过 IPC 通知守护进程准备退出（关键改进）
+        self.logger.write("Sending shutdown signal to daemon via IPC...", 'info')
+        try:
+            # 先尝试停止网络
+            resp = self.vnt_app.vnt_connection._send_ipc_command({"cmd": "stop_network"}, timeout=3)
+            self.logger.write(f"stop_network response: {resp}", 'info')
+            
+            # 发送 shutdown_daemon 命令，让守护进程优雅退出
+            # 这个命令会让 vnt_service 停止 vnt2_cli.exe 并自我清理
+            resp = self.vnt_app.vnt_connection._send_ipc_command({"cmd": "shutdown_daemon"}, timeout=5)
+            if resp.get("status") == "ok":
+                self.logger.write("Shutdown daemon command sent successfully, waiting for graceful exit...")
+            else:
+                self.logger.write(f"Shutdown daemon command response: {resp.get('msg', 'unknown')}")
+        except Exception as e:
+            self.logger.write(f"Failed to send shutdown command via IPC: {e}", 'warning')
+            self.logger.write("Will proceed with direct service management")
 
+        # Step 2: 等待守护进程和CLI进程优雅退出
+        self.logger.write("Waiting for daemon and CLI processes to exit gracefully...")
+        time.sleep(3)  # 给守护进程时间处理shutdown命令
+        
+        # Step 3: 检查并处理服务状态
+        if self.vnt_app.is_service_installed():
+            service_status = self.vnt_app.get_service_status()
+            self.logger.write(f"Service status after shutdown signal: {service_status}")
+            
+            # 如果服务仍在运行或正在停止，等待它完成
+            if service_status in ["RUNNING", "STOPPING", "STOP_PENDING"]:
+                self.logger.write("Stopping VNT daemon service...", 'info')
+                self.vnt_app.stop_service()
+                
+                # 等待服务完全停止
+                self.logger.write("Waiting for service to fully stop...")
+                for i in range(10):  # 最多等待10秒
+                    time.sleep(1)
+                    status = self.vnt_app.get_service_status()
+                    if status == "STOPPED":
+                        self.logger.write("Service stopped successfully")
+                        break
+                    self.logger.write(f"Service status: {status} (waiting... {i+1}/10)")
+        
+        # Step 4: 卸载服务
+        self.logger.write("Uninstalling VNT daemon service...", 'info')
+        self.vnt_app.uninstall_service()
+        
+        # Step 5: 启动更新器（此时旧进程应该已经退出）
         run_vnt_updater(
             os.path.join(self.workingdir, self.updater_exe_nm),
             self.workingdir,
@@ -3255,6 +3297,8 @@ class VNT_Update_Window(wx.Frame):
             RESOURCE_FILE_NAMES,
             self.logger.get_log_fn()
         )
+        
+        # Step 6: 停止GUI（在更新器启动后）
         self.vnt_app.stop(True)
 
     def _estimate_bandwidth(self, url, test_size=256 * 1024, timeout=15):
@@ -4635,14 +4679,26 @@ class VNT_TaskBar_Icon(wx.adv.TaskBarIcon):
         if resp.get("status") == "ok" and resp.get("running") == "yes":
             ip = resp.get("virtual_ip")
             self.vnt_app.vnt_cli_version = resp.get("version")
-            self.vnt_app.vnt_cli_serial = resp.get("serial")
-            self.vnt_app.vnt_server_version = resp.get("server_version")
+            self.vnt_app.vnt_server_version = "2.0"  # Hardcoded server version
             self.logger.write(
                 f"About: ip {ip}; cli ver {
-                    self.vnt_app.vnt_cli_version}; serial {
-                    self.vnt_app.vnt_cli_serial}; server ver {
+                    self.vnt_app.vnt_cli_version}; server ver {
                     self.vnt_app.vnt_server_version}",
                 'debug')
+        
+        # Calculate MD5 of vnt2_cli.exe
+        vnt2_cli_path = os.path.join(self.workingdir, "vnt2_cli.exe")
+        try:
+            if os.path.exists(vnt2_cli_path):
+                with open(vnt2_cli_path, 'rb') as f:
+                    file_hash = hashlib.md5(f.read()).hexdigest()
+                self.vnt_app.vnt_cli_serial = file_hash
+            else:
+                self.vnt_app.vnt_cli_serial = "N/A"
+        except Exception as e:
+            self.vnt_app.vnt_cli_serial = "Error"
+            self.logger.write(f"Failed to calculate MD5 of vnt2_cli.exe: {e}", 'error')
+        
         time.sleep(0.5)
 
         CMD_LINE_HELP = _('Command line parameters:\n') + f'{os.path.basename(sys.argv[0])} [-h] [-d] [-b] [-v]\n\n' + _('optional arguments:\n') + \
@@ -4653,7 +4709,7 @@ class VNT_TaskBar_Icon(wx.adv.TaskBarIcon):
 
         ver_info = f"\nVNT Helper version:  {self.vnt_app.current_version}\n"
         ver_info += f"vnt-cli.exe version:    {self.vnt_app.vnt_cli_version}\n"
-        ver_info += f"vnt-cli.exe serial:       {self.vnt_app.vnt_cli_serial}\n"
+        ver_info += f"vnt-cli.exe MD5:       {self.vnt_app.vnt_cli_serial}\n"
         ver_info += f"vnt server version:    {self.vnt_app.vnt_server_version}\n\n{CMD_LINE_HELP}"
 
         about = AboutDialog(
@@ -4878,17 +4934,38 @@ class VNT_Log_Window(wx.Frame):
         return []
 
     def parse_log_line(self, line):
-        pattern = r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})\s*-\s*(\w+)\s*-\s*PID\s+(\d+)\s*:\s*(.*)$'
-        match = re.match(pattern, line.strip())
+        line = line.strip()
+        
+        # Pattern 1: Python logging format
+        # 2026-05-20 14:44:15,976 - INFO - PID 3720 : message
+        pattern_python = r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})\s*-\s*(\w+)\s*-\s*PID\s+(\d+)\s*:\s*(.*)$'
+        match = re.match(pattern_python, line)
         if match:
             timestamp, level, pid, message = match.groups()
             return timestamp, level, pid, message
+        
+        # Pattern 2: Rust/vnt2_cli format (ISO 8601 with timezone)
+        # 2026-05-20T14:44:15.933124700+08:00 INFO message
+        pattern_rust = r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+[+-]\d{2}:\d{2})\s+(INFO|WARN|ERROR|DEBUG|TRACE)\s+(.*)$'
+        match = re.match(pattern_rust, line)
+        if match:
+            timestamp_raw, level, message = match.groups()
+            # Convert ISO 8601 format to more readable format
+            try:
+                # Extract datetime part before the timezone
+                dt_part = timestamp_raw.split('+')[0].split('-')[0:3]
+                time_part = timestamp_raw.split('T')[1].split('.')[0]
+                date_part = '-'.join(dt_part[:3])
+                timestamp = f"{date_part} {time_part}"
+            except Exception:
+                timestamp = timestamp_raw
+            return timestamp, level, "", message
+        
+        # Fallback for unparseable lines
+        if re.match(r'^\d{4}-\d{2}-\d{2}', line):
+            return (line, "", "", "")
         else:
-            # Fallback for unparseable lines
-            if re.match(r'^\d{4}-\d{2}-\d{2}', line):
-                return (line.strip(), "", "", "")
-            else:
-                return (None, "", "", line.rstrip('\r\n'))
+            return (None, "", "", line.rstrip('\r\n'))
 
     def add_log_entry(self, timestamp, level, pid, message):
         def _append():

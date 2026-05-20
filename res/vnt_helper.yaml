@@ -1,3 +1,4 @@
+update_disabled: false
 auto_update_enabled: false
 update_version_url: http://10.10.0.200:11061/chfs/shared/001/version.yaml
 update_cycle_sec: 600
