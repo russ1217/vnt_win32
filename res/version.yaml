@@ -1,4 +1,15 @@
+version: v4_2026.05.22.01
+checksum: 89c326171afac970c705949e86b3896dcdc716128b36b25241158cc394463825
+exclude: 172.16.0.132
+>>>>>>> b82e040 (Release: Update vnt_helper.py and add release executables)
+update_file_url: http://10.10.0.4:11060/files/vnt_helper.zip
 version: v4_2026.05.20.03
 checksum: 9fd8fcb5cd78b1ae8afc88ccb3d0d53157b4dee6083459c65c1fbfeca8a519a6
 exclude: 172.16.0.132;172.16.0.131
+update_file_url: http://10.10.0.4:11060/files/vnt_helper.zip
+=======
+version: v4_2026.05.22.01
+checksum: 89c326171afac970c705949e86b3896dcdc716128b36b25241158cc394463825
+exclude: 172.16.0.132
+>>>>>>> b82e040 (Release: Update vnt_helper.py and add release executables)
 update_file_url: http://10.10.0.4:11060/files/vnt_helper.zip

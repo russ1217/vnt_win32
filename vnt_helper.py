@@ -1281,15 +1281,6 @@ class VNT_Connection():
             if hasattr(self, '_event_listening'):
                 self._event_listening = False
 
-    def stop_vnt_network(self):
-        """仅通知 daemon 关闭网络（退出前调用）"""
-        if not self.is_toggled_off() and self.running:
-            self._send_ipc_command({"cmd": "stop_network"})
-            self.toggled_off = True
-            self.virtual_IP = None
-            self._connected_notified = False  # 重置连接通知标志，下次连接时可再次显示
-            self.logger.write("VNT network stopped (daemon remains).")
-
     def cleanup(self):
         """清理资源（可选）"""
         self._event_listening = False
