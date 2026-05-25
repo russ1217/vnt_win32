@@ -366,23 +366,23 @@ class VNTDaemon():
         """仅关闭网络连接（VNT 2.0不支持--stop命令，直接终止进程）"""
         if self.vnt_process and self.vnt_process.poll() is None:
             try:
-                self.logger.write(f"[DEBUG] Attempting to stop vnt-cli process (PID: {self.vnt_process.pid})", "info")
+                self.logger.write(f"Attempting to stop vnt-cli process (PID: {self.vnt_process.pid})", "info")
 
                 # VNT 2.0不支持--stop命令，直接终止进程
-                self.logger.write(f"[DEBUG] Terminating vnt-cli process...", "info")
+                self.logger.write(f"Terminating vnt-cli process...", "info")
                 self.vnt_process.terminate()
 
                 try:
                     # Wait for the process to terminate gracefully (up to 5 seconds)
-                    self.logger.write(f"[DEBUG] Waiting for process to terminate (timeout=5s)...", "info")
+                    self.logger.write(f"Waiting for process to terminate (timeout=5s)...", "info")
                     self.vnt_process.wait(timeout=5)
-                    self.logger.write(f"[DEBUG] Process terminated successfully", "info")
+                    self.logger.write(f"Process terminated successfully", "info")
                 except subprocess.TimeoutExpired:
                     # If it doesn't terminate gracefully, force kill it
                     self.logger.write("vnt-cli did not terminate gracefully, forcing kill", "info")
                     self.vnt_process.kill()
                     self.vnt_process.wait()  # Wait for the kill to complete
-                    self.logger.write(f"[DEBUG] Process killed forcefully", "info")
+                    self.logger.write(f"Process killed forcefully", "info")
 
                 self.virtual_ip = None
                 self.logger.write("Successfully stopped vnt-cli process", "info")
@@ -391,7 +391,7 @@ class VNTDaemon():
             except Exception as e:
                 self.logger.write(f"Could not stop vnt-cli process: {type(e).__name__}: {e}", "critical")
                 import traceback
-                self.logger.write(f"[DEBUG] Traceback:\n{traceback.format_exc()}", "critical")
+                self.logger.write(f"Traceback:\n{traceback.format_exc()}", "critical")
                 return False
         else:
             self.logger.write("vnt-cli process is not running or already stopped", "info")
@@ -498,7 +498,7 @@ class VNTDaemon():
         # 这样即使没有GUI，也会自动尝试连接
         if not self.gui_started_cli:
             self.auto_start_mode = True
-            self.logger.write("[AUTO-MODE] Auto-start mode enabled for Session 0", "info")
+            self.logger.write("Auto-start mode enabled for Session 0", "info")
 
         while self.running:
             if self.vnt_process and self.vnt_process.poll() is None:
@@ -534,9 +534,9 @@ class VNTDaemon():
                 if not (internet_ok and server_ok):
                     # 网络或服务器不可用，等待后重试（Session 0 持续重试）
                     if not internet_ok:
-                        self.logger.write("[AUTO-RETRY] Internet not connected, will retry...", "info")
+                        self.logger.write("Internet not connected, will retry...", "info")
                     elif not server_ok:
-                        self.logger.write("[AUTO-RETRY] Server not reachable, will retry...", "info")
+                        self.logger.write("Server not reachable, will retry...", "info")
                     time.sleep(5)  # 网络问题时等待5秒再重试
                     continue
 
@@ -546,35 +546,35 @@ class VNTDaemon():
                 has_valid_config = config_path and Path(config_path).exists()
 
                 if not has_valid_config:
-                    self.logger.write("[AUTO-RETRY] No valid config file found, will retry...", "info")
+                    self.logger.write("No valid config file found, will retry...", "info")
                     time.sleep(10)  # 配置文件缺失时等待更长时间
                     continue
 
                 # ⭐ 所有条件满足，启动CLI
-                self.logger.write("[AUTO-RETRY] All conditions met, starting vnt-cli...", "info")
+                self.logger.write("All conditions met, starting vnt-cli...", "info")
                 self.logger.write(
-                    f"[AUTO-RETRY] Mode: auto={self.auto_start_mode}, gui_started={self.gui_started_cli}", "info")
+                    f"Mode: auto={self.auto_start_mode}, gui_started={self.gui_started_cli}", "info")
 
                 success = self.start_vnt_cli()
                 if success:
-                    self.logger.write("[AUTO-RETRY] Successfully started vnt-cli", "info")
+                    self.logger.write("Successfully started vnt-cli", "info")
                     time.sleep(5)
                 else:
-                    self.logger.write("[AUTO-RETRY] Failed to start vnt-cli, will retry in 10 seconds", "warning")
+                    self.logger.write("Failed to start vnt-cli, will retry in 10 seconds", "warning")
                     time.sleep(10)  # 启动失败后等待10秒再重试
 
     def handle_ipc_command(self, conn, addr):
-        self.logger.write(f"[DEBUG] ===== IPC Command Handler Entered =====", "info")
-        self.logger.write(f"[DEBUG] Connection from: {addr}", "info")
+        self.logger.write(f"===== IPC Command Handler Entered =====", "info")
+        self.logger.write(f"Connection from: {addr}", "info")
         try:
-            self.logger.write(f"[DEBUG] Waiting to receive data...", "info")
+            self.logger.write(f"Waiting to receive data...", "info")
             data = conn.recv(1024).decode('utf-8')
-            self.logger.write(f"[DEBUG] Received raw data: '{data}'", "info")
+            self.logger.write(f"Received raw data: '{data}'", "info")
             if not data.strip():
-                self.logger.write(f"[DEBUG] Empty data received, returning", "info")
+                self.logger.write(f"Empty data received, returning", "info")
                 return
             cmd = json.loads(data)
-            self.logger.write(f"[DEBUG] Parsed command: {cmd}", "info")
+            self.logger.write(f"Parsed command: {cmd}", "info")
             self.logger.write(f"Received [{cmd.get('cmd')}] command via IPC.", "info")
 
             if cmd.get("cmd") == "subscribe_events":
@@ -594,70 +594,70 @@ class VNTDaemon():
                 return  # keep connection open
 
             elif cmd["cmd"] == "start":
-                self.logger.write(f"[DEBUG] Processing 'start' command", "info")
-                self.logger.write(f"[DEBUG] Current toggled_off state: {self.toggled_off}", "info")
-                self.logger.write(f"[DEBUG] Calling start_vnt_cli()...", "info")
+                self.logger.write(f"Processing 'start' command", "info")
+                self.logger.write(f"Current toggled_off state: {self.toggled_off}", "info")
+                self.logger.write(f"Calling start_vnt_cli()...", "info")
                 success = self.start_vnt_cli()
-                self.logger.write(f"[DEBUG] start_vnt_cli() returned: {success}", "info")
+                self.logger.write(f"start_vnt_cli() returned: {success}", "info")
                 if success:
                     # ⭐ Session 1 GUI模式：标记CLI由GUI启动
                     self.toggled_off = False
                     self.gui_started_cli = True
                     self.auto_start_mode = False  # GUI手动启动时，关闭自动模式
-                    self.logger.write(f"[DEBUG] Set gui_started_cli=True, auto_start_mode=False", "info")
+                    self.logger.write(f"Set gui_started_cli=True, auto_start_mode=False", "info")
                 resp = {"status": "ok"} if success else {"status": "error", "msg": "start failed"}
-                self.logger.write(f"[DEBUG] Sending response: {resp}", "info")
+                self.logger.write(f"Sending response: {resp}", "info")
                 conn.send(json.dumps(resp).encode())
-                self.logger.write(f"[DEBUG] Response sent successfully", "info")
+                self.logger.write(f"Response sent successfully", "info")
 
             elif cmd["cmd"] == "stop_network":
-                self.logger.write(f"[DEBUG] Processing 'stop_network' command", "info")
-                self.logger.write(f"[DEBUG] Current toggled_off state: {self.toggled_off}", "info")
-                self.logger.write(f"[DEBUG] Setting toggled_off=True", "info")
+                self.logger.write(f"Processing 'stop_network' command", "info")
+                self.logger.write(f"Current toggled_off state: {self.toggled_off}", "info")
+                self.logger.write(f"Setting toggled_off=True", "info")
                 self.toggled_off = True
                 # ⭐ 用户手动停止，清除GUI启动标志
                 self.gui_started_cli = False
-                self.logger.write(f"[DEBUG] Calling stop_vnt_cli_network()...", "info")
+                self.logger.write(f"Calling stop_vnt_cli_network()...", "info")
                 success = self.stop_vnt_cli_network()
-                self.logger.write(f"[DEBUG] stop_vnt_cli_network() returned: {success}", "info")
+                self.logger.write(f"stop_vnt_cli_network() returned: {success}", "info")
                 resp = {"status": "ok"} if success else {"status": "error", "msg": "stop failed"}
-                self.logger.write(f"[DEBUG] Sending response: {resp}", "info")
+                self.logger.write(f"Sending response: {resp}", "info")
                 conn.send(json.dumps(resp).encode())
-                self.logger.write(f"[DEBUG] Response sent successfully", "info")
+                self.logger.write(f"Response sent successfully", "info")
 
             elif cmd["cmd"] == "restart":
-                self.logger.write(f"[DEBUG] Processing 'restart' command", "info")
+                self.logger.write(f"Processing 'restart' command", "info")
                 success = True
                 running = self.vnt_process is not None and self.vnt_process.poll() is None
-                self.logger.write(f"[DEBUG] Current vnt_process running state: {running}", "info")
+                self.logger.write(f"Current vnt_process running state: {running}", "info")
                 if running:
-                    self.logger.write(f"[DEBUG] Calling stop_vnt_cli_network()...", "info")
+                    self.logger.write(f"Calling stop_vnt_cli_network()...", "info")
                     success = self.stop_vnt_cli_network()
-                    self.logger.write(f"[DEBUG] stop_vnt_cli_network() returned: {success}", "info")
+                    self.logger.write(f"stop_vnt_cli_network() returned: {success}", "info")
 
-                self.logger.write(f"[DEBUG] Waiting 1 second before restart...", "info")
+                self.logger.write(f"Waiting 1 second before restart...", "info")
                 time.sleep(1)
 
-                self.logger.write(f"[DEBUG] Calling start_vnt_cli()...", "info")
+                self.logger.write(f"Calling start_vnt_cli()...", "info")
                 success = success and self.start_vnt_cli()
-                self.logger.write(f"[DEBUG] start_vnt_cli() returned: {success}", "info")
+                self.logger.write(f"start_vnt_cli() returned: {success}", "info")
                 if success:
                     # ⭐ 重启后保持原有模式
                     self.toggled_off = False
                     if not self.auto_start_mode:
                         self.gui_started_cli = True
                     self.logger.write(
-                        f"[DEBUG] Restart completed, gui_started_cli={
+                        f"Restart completed, gui_started_cli={
                             self.gui_started_cli}, auto_start_mode={
                             self.auto_start_mode}", "info")
 
                 resp = {"status": "ok"} if success else {"status": "error", "msg": "restart failed"}
-                self.logger.write(f"[DEBUG] Sending response: {resp}", "info")
+                self.logger.write(f"Sending response: {resp}", "info")
                 conn.send(json.dumps(resp).encode())
-                self.logger.write(f"[DEBUG] Response sent successfully", "info")
+                self.logger.write(f"Response sent successfully", "info")
 
             elif cmd["cmd"] == "status":
-                self.logger.write(f"[DEBUG] Processing 'status' command", "info")
+                self.logger.write(f"Processing 'status' command", "info")
                 running = "yes" if self.vnt_process is not None and self.vnt_process.poll() is None else "no"
                 status_data = {
                     "status": "ok",
@@ -666,29 +666,29 @@ class VNTDaemon():
                     "version": self.ver,
                     "serial": self.serial,
                     "server_version": self.server_version}
-                self.logger.write(f"[DEBUG] Status data: {status_data}", "info")
+                self.logger.write(f"Status data: {status_data}", "info")
                 conn.send(json.dumps(status_data).encode())
-                self.logger.write(f"[DEBUG] Status response sent", "info")
+                self.logger.write(f"Status response sent", "info")
 
             elif cmd["cmd"] == "exit":
-                self.logger.write(f"[DEBUG] Processing 'exit' command", "info")
+                self.logger.write(f"Processing 'exit' command", "info")
                 # ⭐ 关键逻辑：根据启动模式决定是否停止CLI
                 # Session 1 GUI模式（gui_started_cli=True）：退出时停止CLI
                 # Session 0 服务模式（auto_start_mode=True）：退出时不停止CLI
 
                 if self.gui_started_cli and not self.toggled_off:
                     # Session 1: GUI启动的CLI，退出时应该停止
-                    self.logger.write(f"[DEBUG] GUI exit in Session 1 mode - stopping vnt2_cli.exe", "info")
+                    self.logger.write(f"GUI exit in Session 1 mode - stopping vnt2_cli.exe", "info")
                     success = self.stop_vnt_cli_network()
-                    self.logger.write(f"[DEBUG] stop_vnt_cli_network() returned: {success}", "info")
+                    self.logger.write(f"stop_vnt_cli_network() returned: {success}", "info")
 
                     if self.vnt_process:
-                        self.logger.write(f"[DEBUG] Waiting for vnt_process to terminate (timeout=5s)...", "info")
+                        self.logger.write(f"Waiting for vnt_process to terminate (timeout=5s)...", "info")
                         try:
                             self.vnt_process.wait(timeout=5)
-                            self.logger.write(f"[DEBUG] vnt_process terminated successfully", "info")
+                            self.logger.write(f"vnt_process terminated successfully", "info")
                         except Exception as e:
-                            self.logger.write(f"[DEBUG] vnt_process wait timeout or error: {e}", "warning")
+                            self.logger.write(f"vnt_process wait timeout or error: {e}", "warning")
 
                     # 重置状态
                     self.gui_started_cli = False
@@ -696,34 +696,34 @@ class VNTDaemon():
                 else:
                     # Session 0 或已手动停止：只断开连接，不停止CLI
                     self.logger.write(
-                        f"[DEBUG] GUI exit in Session 0 mode or already stopped - keeping daemon running", "info")
+                        f"GUI exit in Session 0 mode or already stopped - keeping daemon running", "info")
                     success = True
 
-                self.logger.write(f"[DEBUG] Sending exit confirmation (daemon stays running)", "info")
+                self.logger.write(f"Sending exit confirmation (daemon stays running)", "info")
                 conn.send(json.dumps({"status": "ok", "msg": "vnt2_cli.exe handled, daemon remains running"}).encode())
-                self.logger.write(f"[DEBUG] Exit confirmation sent", "info")
+                self.logger.write(f"Exit confirmation sent", "info")
 
             elif cmd["cmd"] == "shutdown_daemon":
                 # ⭐ 新增命令：完全关闭守护进程（用于重置操作）
                 self.logger.write(
-                    f"[DEBUG] Processing 'shutdown_daemon' command - full daemon shutdown requested", "info")
+                    f"Processing 'shutdown_daemon' command - full daemon shutdown requested", "info")
 
                 # 1. 先停止CLI
                 if self.vnt_process and self.vnt_process.poll() is None:
-                    self.logger.write(f"[DEBUG] Stopping vnt2_cli.exe before daemon shutdown...", "info")
+                    self.logger.write(f"Stopping vnt2_cli.exe before daemon shutdown...", "info")
                     self.stop_vnt_cli_network()
                     try:
                         self.vnt_process.wait(timeout=5)
-                        self.logger.write(f"[DEBUG] vnt2_cli.exe stopped", "info")
+                        self.logger.write(f"vnt2_cli.exe stopped", "info")
                     except Exception as e:
-                        self.logger.write(f"[DEBUG] Error waiting for CLI: {e}", "warning")
+                        self.logger.write(f"Error waiting for CLI: {e}", "warning")
 
                 # 2. 发送确认响应
-                self.logger.write(f"[DEBUG] Sending shutdown confirmation", "info")
+                self.logger.write(f"Sending shutdown confirmation", "info")
                 conn.send(json.dumps({"status": "ok", "msg": "daemon shutting down"}).encode())
 
                 # 3. 设置退出标志，守护进程将在主循环中退出
-                self.logger.write(f"[DEBUG] Setting running=False to trigger daemon shutdown", "info")
+                self.logger.write(f"Setting running=False to trigger daemon shutdown", "info")
                 self.running = False
 
                 # 4. 关闭IPC连接
@@ -735,7 +735,7 @@ class VNTDaemon():
                 conn.send(json.dumps({"status": "error", "msg": "unknown command"}).encode())
 
         except json.JSONDecodeError:
-            self.logger.write(f"[DEBUG] JSON decode error, closing connection", "warning")
+            self.logger.write(f"JSON decode error, closing connection", "warning")
             # 清理 GUI 连接跟踪
             with self.gui_connection_lock:
                 if conn in self.gui_connections:
@@ -744,9 +744,9 @@ class VNTDaemon():
                         f"[GUI TRACK] Connection removed (JSON error). Remaining: {len(self.gui_connections)}", "info")
             conn.close()
         except Exception as e:
-            self.logger.write(f"[DEBUG] IPC exception caught: {type(e).__name__}: {e}", "critical")
+            self.logger.write(f"IPC exception caught: {type(e).__name__}: {e}", "critical")
             import traceback
-            self.logger.write(f"[DEBUG] Traceback:\n{traceback.format_exc()}", "critical")
+            self.logger.write(f"Traceback:\n{traceback.format_exc()}", "critical")
             if cmd.get("cmd") != "subscribe_events":
                 # 清理 GUI 连接跟踪
                 with self.gui_connection_lock:
@@ -754,7 +754,7 @@ class VNTDaemon():
                         self.gui_connections.discard(conn)
                         self.logger.write(
                             f"[GUI TRACK] Connection removed (exception). Remaining: {len(self.gui_connections)}", "info")
-                self.logger.write(f"[DEBUG] Closing connection due to error", "info")
+                self.logger.write(f"Closing connection due to error", "info")
                 conn.close()
         finally:
             # 清理 GUI 连接跟踪（确保连接关闭时被移除）
@@ -794,7 +794,7 @@ class VNTDaemon():
                         else:
                             self.logger.write("[GUI TRACK] All GUI disconnected, CLI state unchanged", "info")
 
-            self.logger.write(f"[DEBUG] ===== IPC Command Handler Exited =====", "info")
+            self.logger.write(f"===== IPC Command Handler Exited =====", "info")
 
     def ipc_server_loop(self):
         max_retries = 5
@@ -805,7 +805,7 @@ class VNTDaemon():
                 self.ipc_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.ipc_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 self.logger.write(
-                    f"[DEBUG] Attempting to bind IPC server to {IPC_HOST}:{
+                    f"Attempting to bind IPC server to {IPC_HOST}:{
                         self.IPC_PORT} (attempt {
                         attempt + 1}/{max_retries})", "info")
                 self.ipc_server.bind((IPC_HOST, self.IPC_PORT))
@@ -814,18 +814,18 @@ class VNTDaemon():
 
                 # 设置一个标志，表示IPC服务器已就绪
                 self.ipc_ready = True
-                self.logger.write(f"[DEBUG] IPC server is ready", "info")
+                self.logger.write(f"IPC server is ready", "info")
                 break  # 成功绑定，退出重试循环
 
             except OSError as e:
                 if e.errno == 10048:  # WSAEADDRINUSE - 端口已被占用
                     self.logger.write(
-                        f"[DEBUG] Port {
+                        f"Port {
                             self.IPC_PORT} is already in use (attempt {
                             attempt + 1}/{max_retries})",
                         "warning")
                     if attempt < max_retries - 1:
-                        self.logger.write(f"[DEBUG] Waiting {retry_delay} seconds before retry...", "info")
+                        self.logger.write(f"Waiting {retry_delay} seconds before retry...", "info")
                         time.sleep(retry_delay)
                         # 关闭失败的socket
                         try:
@@ -833,17 +833,17 @@ class VNTDaemon():
                         except BaseException:
                             pass
                     else:
-                        self.logger.write(f"[DEBUG] Failed to bind port after {max_retries} attempts", "critical")
+                        self.logger.write(f"Failed to bind port after {max_retries} attempts", "critical")
                         raise RuntimeError(f"Cannot bind to port {self.IPC_PORT}: Port already in use")
                 else:
-                    self.logger.write(f"[DEBUG] Socket error during bind: {e}", "critical")
+                    self.logger.write(f"Socket error during bind: {e}", "critical")
                     raise
             except Exception as e:
                 self.logger.write(
-                    f"[DEBUG] Unexpected error during IPC server setup: {
+                    f"Unexpected error during IPC server setup: {
                         type(e).__name__}: {e}", "critical")
                 import traceback
-                self.logger.write(f"[DEBUG] Traceback:\n{traceback.format_exc()}", "critical")
+                self.logger.write(f"Traceback:\n{traceback.format_exc()}", "critical")
                 raise
 
         while self.running:
@@ -999,7 +999,10 @@ class VNT_Logger():
             "tunnel TCP-Some",         # 隧道连接建立
             "drop tunnel",             # 隧道连接断开
             "INFO tcp_public_addr",    # 公网地址日志
-            "INFO try_main_send_to_addr", 
+            "INFO try_main_send_to_addr",
+            "INFO tunnel UDP-None",
+            "INFO Relay probe task completed",
+            "INFO local_ipv4s",
         ]
 
         # 检查是否包含任何需要过滤的关键词
@@ -1042,18 +1045,33 @@ class VNT_Logger():
                                 state['last_connect_count'] = count
 
             if should_log:
+                # 处理 Rust/vnt2_cli 日志格式：提取 INFO/WARN/ERROR 后的实际消息
+                processed_txt = full_txt
+                # 匹配 ISO 8601 时间戳 + 日志级别格式（不要求行首，因为前面有 PID 前缀）
+                rust_log_pattern = re.compile(
+                    r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+[+-]\d{2}:\d{2}\s+(INFO|WARN|ERROR|DEBUG|TRACE)\s+'
+                )
+                match = rust_log_pattern.search(full_txt)
+                if match:
+                    # 找到日志级别，提取其后的内容
+                    log_level_end = match.end()
+                    actual_message = full_txt[log_level_end:].strip()
+                    # 保留 PID 前缀，替换为简洁格式
+                    pid_prefix = f"PID {current_pid:<6} : "
+                    processed_txt = pid_prefix + actual_message
+
                 # 注意：print 是同步的，可以放锁内
-                print(full_txt)
+                print(processed_txt)
                 if self._logger is not None:
                     if mode.lower() == "debug":
-                        self._logger.debug(full_txt)
+                        self._logger.debug(processed_txt)
                     elif mode.lower() == "critical":
-                        self._logger.critical(full_txt)
+                        self._logger.critical(processed_txt)
                     else:
-                        self._logger.info(full_txt)
+                        self._logger.info(processed_txt)
 
                 # 更新状态
-                state['last_msg'] = full_txt
+                state['last_msg'] = processed_txt
                 state['last_time'] = current_time
 
     def get_log_fn(self):

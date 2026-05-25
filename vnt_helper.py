@@ -49,8 +49,7 @@ from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-<<<<<<< HEAD
-VNT_HELPER_VERSION = "v4_2026.05.25.02"
+VNT_HELPER_VERSION = "v4_2026.05.25.07"
 VNT_CLI_LOG_FILE = 'vnt_cli.log'
 VNT_HELPER_CONFIG_FILE = "vnt_helper.yaml"
 VNT_CLIENT_NAME = "vnt2_cli.exe"  # VNT 2.0 客户端
@@ -4227,13 +4226,13 @@ class VNT_Information_Window(wx.Frame):
         }
 
         vnt2_cmd = cmd_mapping.get(cmd, cmd)
-        self.logger.write(f"[GUI DEBUG] Info Daemon started for cmd={cmd}, mapped to vnt2_cmd={vnt2_cmd}", 'debug')
+        self.logger.write(f"Info Daemon started for cmd={cmd}, mapped to vnt2_cmd={vnt2_cmd}", 'debug')
 
         while not exit_flag.is_set():
 
             try:
                 # VNT2 使用子命令格式: vnt2_ctrl.exe <command>
-                self.logger.write(f"[GUI DEBUG] Starting process: {working_vnt_ctrl} {vnt2_cmd}", 'debug')
+                self.logger.write(f"Starting process: {working_vnt_ctrl} {vnt2_cmd}", 'debug')
                 p = subprocess.Popen(
                     "\"" + working_vnt_ctrl + "\" " + vnt2_cmd,
                     shell=True,
@@ -4247,7 +4246,7 @@ class VNT_Information_Window(wx.Frame):
 
                 if p.returncode != 0:
                     self.logger.write(
-                        f"[GUI DEBUG] Command failed with return code {
+                        f"Command failed with return code {
                             p.returncode}: {
                             stderr.decode(
                                 'utf-8',
@@ -4258,10 +4257,10 @@ class VNT_Information_Window(wx.Frame):
 
                 # 解码输出
                 text = stdout.decode('utf-8', 'ignore')
-                self.logger.write(f"[GUI DEBUG] Received {len(text)} bytes of output", 'debug')
+                self.logger.write(f"Received {len(text)} bytes of output", 'debug')
 
                 if not text or len(text.strip()) == 0:
-                    self.logger.write(f"[GUI DEBUG] Empty output received", 'debug')
+                    self.logger.write(f"Empty output received", 'debug')
                     time.sleep(2)  # 空输出时延长重试间隔
                     continue
 
@@ -4269,7 +4268,7 @@ class VNT_Information_Window(wx.Frame):
                 # ANSI 转义码格式: \x1b[...m 或 \x1b(...\)
                 ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
                 text = ansi_escape.sub('', text)
-                self.logger.write(f"[GUI DEBUG] Cleaned ANSI escape codes, now {len(text)} bytes", 'debug')
+                self.logger.write(f"Cleaned ANSI escape codes, now {len(text)} bytes", 'debug')
 
                 # 根据命令类型选择不同的解析策略
                 data = []
@@ -4292,12 +4291,12 @@ class VNT_Information_Window(wx.Frame):
                                 if key and value:
                                     data.append([key, value])
 
-                    self.logger.write(f"[GUI DEBUG] Parsed {len(data)} key-value pairs from info output", 'debug')
+                    self.logger.write(f"Parsed {len(data)} key-value pairs from info output", 'debug')
 
                 else:
                     # clients 和 route 命令输出的是表格格式
                     lines = text.strip().split("\n")
-                    self.logger.write(f"[GUI DEBUG] Parsed {len(lines)} lines from output", 'debug')
+                    self.logger.write(f"Parsed {len(lines)} lines from output", 'debug')
 
                     # 解析表格数据
                     for line in lines:
@@ -4338,7 +4337,7 @@ class VNT_Information_Window(wx.Frame):
                         # 重新组合：表头 + 排序后的数据
                         data = [header] + data_rows
 
-                    self.logger.write(f"[GUI DEBUG] Extracted {len(data)} rows of table data", 'debug')
+                    self.logger.write(f"Extracted {len(data)} rows of table data", 'debug')
 
                 # 计算数据的哈希值，用于检测是否变化
                 data_str = str(data)
@@ -4361,7 +4360,7 @@ class VNT_Information_Window(wx.Frame):
                 col_count = max(len(row) for row in data) if data else 0
 
                 if (last_col_count != col_count or last_row_count != row_count) and row_count != 0 and col_count != 0:
-                    self.logger.write(f"[GUI DEBUG] Redrawing grid: {row_count} rows, {col_count} cols", 'debug')
+                    self.logger.write(f"Redrawing grid: {row_count} rows, {col_count} cols", 'debug')
                     wx.CallAfter(self._redraw_grid, row_count, col_count, cmd)
 
                 last_row_count = row_count
@@ -4374,14 +4373,14 @@ class VNT_Information_Window(wx.Frame):
                             if col < self.m_grid3.GetNumberCols():  # 确保不超出列范围
                                 wx.CallAfter(self._write_grid, row, col, value)
 
-                    self.logger.write(f"[GUI DEBUG] Wrote {len(data)} rows to grid", 'debug')
+                    self.logger.write(f"Wrote {len(data)} rows to grid", 'debug')
 
             except subprocess.TimeoutExpired:
-                self.logger.write(f"[GUI DEBUG] Command timed out", 'error')
+                self.logger.write(f"Command timed out", 'error')
                 if p.poll() is None:
                     p.kill()
             except Exception as e:
-                self.logger.write(f"[GUI DEBUG] Failed to execute vnt2_ctrl.exe: {e}", 'critical')
+                self.logger.write(f"Failed to execute vnt2_ctrl.exe: {e}", 'critical')
 
             # 正常刷新间隔：1.5 秒（平衡实时性和可读性）
             time.sleep(1.5)
