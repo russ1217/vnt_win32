@@ -49,6 +49,7 @@ from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
+<<<<<<< HEAD
 VNT_HELPER_VERSION = "v4_2026.05.25.02"
 VNT_CLI_LOG_FILE = 'vnt_cli.log'
 VNT_HELPER_CONFIG_FILE = "vnt_helper.yaml"
