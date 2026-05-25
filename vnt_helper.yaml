@@ -3,7 +3,7 @@ update_file_url: http://10.10.0.200:11061/chfs/shared/001/vnt_helper.zip
 update_version_url: http://10.10.0.200:11061/chfs/shared/001/version.yaml
 update_cycle_sec: 600
 notification_enabled: true
-display_language: en
+display_language: zh_CN
 autorun_cli_on_startup: true
 ipc_port: 58432
 profile_list: zenbook

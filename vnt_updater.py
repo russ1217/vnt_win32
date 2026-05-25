@@ -465,34 +465,62 @@ class VNT_Updater:
 
         self.log("INFO", "Starting VNT Updater...")
         
-        # Step 1: Stop service first (this should also stop vnt2_cli.exe)
+        # === 优化的优雅退出流程 ===
+        
+        # Step 0: Kill any orphaned vnt_service.exe processes BEFORE stopping the service
+        # This prevents multiple instances from interfering with the update
+        self.log("INFO", "Checking for orphaned vnt_service.exe processes...")
+        orphaned_service_pids = self.get_running_pids(self.service_exe)
+        if len(orphaned_service_pids) > 1:
+            self.log("WARNING", f"Found {len(orphaned_service_pids)} vnt_service.exe processes! PIDs: {orphaned_service_pids}")
+            self.log("INFO", "Force killing all but the primary service process...")
+            # Keep only one PID (the most recent one) and kill the rest
+            for pid in orphaned_service_pids[:-1]:
+                try:
+                    proc = psutil.Process(pid)
+                    proc.kill()
+                    self.log("INFO", f"Killed orphaned service process PID: {pid}")
+                except Exception as e:
+                    self.log("WARNING", f"Failed to kill PID {pid}: {e}")
+            time.sleep(2)  # Give system time to clean up
+        
+        # Step 1: 等待守护进程和CLI进程自然退出（给它们时间响应shutdown信号）
+        self.log("INFO", "Waiting for daemon processes to exit gracefully...")
+        
+        # 先检查服务状态
         if self.is_service_installed():
             service_status = self.get_service_status()
             self.log("INFO", f"VNT Daemon Service status: {service_status}")
             
+            # 如果服务仍在运行，尝试优雅停止
             if service_status == "RUNNING":
                 self.log("INFO", "Stopping VNT daemon service...")
                 self.stop_service()
                 
-                # Wait for service to fully stop
-                self.log("INFO", "Waiting for service to exit...")
-                self.wait_for_process_exit(self.service_exe, max_wait_sec=15, force_after_sec=8)
+                # 等待服务完全停止（增加等待时间）
+                self.log("INFO", "Waiting for service to exit gracefully (up to 20s)...")
+                self.wait_for_process_exit(self.service_exe, max_wait_sec=20, force_after_sec=15)
             
-            # Uninstall the service
+            # 如果服务处于STOPPING状态，给它更多时间完成
+            elif service_status in ["STOPPING", "STOP_PENDING"]:
+                self.log("INFO", f"Service is {service_status}, waiting for completion...")
+                self.wait_for_process_exit(self.service_exe, max_wait_sec=30, force_after_sec=25)
+            
+            # 卸载服务
             self.log("INFO", "Uninstalling VNT daemon service...")
             self.uninstall_service()
         else:
             self.log("INFO", "VNT daemon service not installed, checking for standalone processes...")
 
-        # Step 1.5: Aggressively clean up any remaining CLI processes
-        # This is critical after update to prevent multiple CLI instances
-        self.log("INFO", "Cleaning up any remaining vnt2_cli.exe processes...")
-        self.wait_for_process_exit(self.cli_exe, max_wait_sec=10, force_after_sec=3)
+        # Step 2: 等待CLI进程优雅退出（关键：给予充足时间）
+        self.log("INFO", "Waiting for vnt2_cli.exe to exit gracefully (up to 15s)...")
+        self.wait_for_process_exit(self.cli_exe, max_wait_sec=15, force_after_sec=10)
         
-        # Extra cleanup: scan for any orphaned CLI processes by name pattern
+        # Step 3: 检查并清理任何残留的CLI进程
         orphaned_pids = self._find_all_cli_processes()
         if orphaned_pids:
             self.log("WARNING", f"Found {len(orphaned_pids)} orphaned CLI processes: {orphaned_pids}")
+            self.log("INFO", "Force killing orphaned CLI processes...")
             for pid in orphaned_pids:
                 try:
                     proc = psutil.Process(pid)
@@ -500,42 +528,52 @@ class VNT_Updater:
                     self.log("INFO", f"Force killed orphaned CLI process PID: {pid}")
                 except Exception as e:
                     self.log("WARNING", f"Failed to kill PID {pid}: {e}")
-            time.sleep(2)  # Give system time to clean up
+            time.sleep(2)  # 给系统时间清理
 
-        # Step 2: Kill any remaining vnt_helper.exe instances
-        self.log("INFO", "Checking for VNT Helper processes...")
-        self.wait_for_process_exit(self.main_exe, max_wait_sec=60, force_after_sec=30)
+        # Step 4: 等待GUI进程退出
+        self.log("INFO", "Waiting for VNT Helper GUI to exit (up to 30s)...")
+        self.wait_for_process_exit(self.main_exe, max_wait_sec=30, force_after_sec=20)
 
-        # Step 3: Double-check all processes are gone
+        # Step 5: 最终检查 - 确保所有相关进程都已退出
         self.log("INFO", "Final process cleanup check...")
         remaining_cli = self.get_running_pids(self.cli_exe)
         remaining_service = self.get_running_pids(self.service_exe)
         remaining_helper = self.get_running_pids(self.main_exe)
         
+        any_remaining = False
+        
         if remaining_cli:
-            self.log("WARNING", f"vnt2_cli.exe still running! PIDs: {remaining_cli}, force killing...")
+            self.log("WARNING", f"vnt2_cli.exe still running! PIDs: {remaining_cli}")
             self.force_kill_processes(self.cli_exe)
             time.sleep(2)
+            any_remaining = True
         
         if remaining_service:
-            self.log("WARNING", f"vnt_service.exe still running! PIDs: {remaining_service}, force killing...")
+            self.log("WARNING", f"vnt_service.exe still running! PIDs: {remaining_service}")
             self.force_kill_processes(self.service_exe)
             time.sleep(2)
+            any_remaining = True
         
         if remaining_helper:
-            self.log("WARNING", f"vnt_helper.exe still running! PIDs: {remaining_helper}, force killing...")
+            self.log("WARNING", f"vnt_helper.exe still running! PIDs: {remaining_helper}")
             self.force_kill_processes(self.main_exe)
             time.sleep(2)
+            any_remaining = True
+        
+        if any_remaining:
+            self.log("WARNING", "Some processes required force kill. This may indicate shutdown issues.")
+        else:
+            self.log("INFO", "All processes exited gracefully!")
 
-        # Step 4: Remove old files
+        # Step 6: 删除旧文件
         self.log("INFO", "Removing old files...")
         self.delete_old_files()
 
-        # Step 5: Deploy new version
+        # Step 7: 部署新版本
         self.log("INFO", "Deploying update package...")
         self.deploy_update()
 
-        # Step 6: Launch updated program
+        # Step 8: 启动更新后的程序
         self.log("INFO", "Launching updated VNT Helper...")
         self.launch_updated_program()
 

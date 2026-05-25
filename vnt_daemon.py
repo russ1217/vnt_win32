@@ -998,6 +998,8 @@ class VNT_Logger():
             "nat_type:",               # NAT 类型检测
             "tunnel TCP-Some",         # 隧道连接建立
             "drop tunnel",             # 隧道连接断开
+            "INFO tcp_public_addr",    # 公网地址日志
+            "INFO try_main_send_to_addr", 
         ]
 
         # 检查是否包含任何需要过滤的关键词

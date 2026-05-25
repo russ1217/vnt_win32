@@ -3,6 +3,7 @@
 import os
 import sys
 import time
+import threading
 import win32serviceutil
 import win32service
 import win32event
@@ -21,20 +22,36 @@ class VNTService(win32serviceutil.ServiceFramework):
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
         self.running = True
+        self._daemon_run_returned = False  # Track when daemon.run() completes
         # Do not initialize daemon here to avoid import issues during service registration
         self.daemon = None
 
+    def logger_write(self, message):
+        """Simple logging helper for the service"""
+        try:
+            servicemanager.LogMsg(
+                servicemanager.EVENTLOG_INFORMATION_TYPE,
+                servicemanager.PYS_SERVICE_STOPPED if "stop" in message.lower() else servicemanager.PYS_SERVICE_STARTED,
+                (self._svc_name_, message)
+            )
+        except Exception:
+            pass  # Ignore logging errors
+
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
-        self.running = False
-        win32event.SetEvent(self.hWaitStop)
-
-        # Stop the daemon if it's loaded
+        
+        # Signal the daemon to stop gracefully
         if self.daemon:
             try:
-                self.daemon.cleanup()
-            except Exception:
-                pass  # Ignore errors during cleanup
+                # Set daemon's running flag to False - this will cause its main loop to exit
+                self.daemon.running = False
+                self.logger_write("SvcStop: Signaled daemon to shutdown")
+            except Exception as e:
+                self.logger_write(f"SvcStop: Error signaling daemon: {e}")
+        
+        # Set service stop event so main() loop can detect it
+        self.running = False
+        win32event.SetEvent(self.hWaitStop)
 
     def SvcDoRun(self):
         # Import and initialize the original daemon functionality only when service actually starts
@@ -58,14 +75,37 @@ class VNTService(win32serviceutil.ServiceFramework):
         self.main()
 
     def main(self):
-        # Start the daemon's main functionality
+        # Start the daemon's main functionality in a separate thread
+        # This allows the service stop signal to be processed while daemon is running
+        daemon_thread = None
         if self.daemon:
-            self.daemon.run()
+            daemon_thread = threading.Thread(target=self._run_daemon, daemon=True)
+            daemon_thread.start()
 
         # Keep the service running until stop is requested
         while self.running:
             if win32event.WaitForSingleObject(self.hWaitStop, 1000) == win32event.WAIT_OBJECT_0:
                 break
+        
+        # Wait for daemon thread to finish (with timeout)
+        if daemon_thread and daemon_thread.is_alive():
+            self.logger_write("SvcDoRun: Waiting for daemon thread to exit...")
+            daemon_thread.join(timeout=20)  # Wait up to 20 seconds
+            if daemon_thread.is_alive():
+                self.logger_write("SvcDoRun: Daemon thread did not exit within timeout")
+            else:
+                self.logger_write("SvcDoRun: Daemon thread exited successfully")
+
+    def _run_daemon(self):
+        """Wrapper to run daemon and track when it completes"""
+        try:
+            if self.daemon:
+                self.daemon.run()
+        except Exception as e:
+            self.logger_write(f"Daemon run error: {e}")
+        finally:
+            # Mark that daemon has returned
+            self._daemon_run_returned = True
 
     @staticmethod
     def update_registry_description():
